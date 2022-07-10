@@ -1,0 +1,16 @@
+.DS_Store
+node_modules
+/build
+/dist
+/.svelte-kit
+/package
+.env
+.env.*
+!.env.example
+
+*-extra-files/ThirdPartyApps/demucs-pyinstaller/**
+!*-extra-files/ThirdPartyApps/demucs-pyinstaller/.gitkeep
+*-extra-files/ThirdPartyApps/ffmpeg/**
+!*-extra-files/ThirdPartyApps/ffmpeg/bin
+*-extra-files/ThirdPartyApps/ffmpeg/bin/**
+!*-extra-files/ThirdPartyApps/ffmpeg/bin/.gitkeep

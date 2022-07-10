@@ -1,0 +1,34 @@
+{
+  "directories": {
+    "buildResources": "electron-build-resources"
+  },
+  "appId": "com.stemroller.stemroller",
+  "productName": "StemRoller",
+  "files": [
+    {
+      "from": "build",
+      "to": "renderer-build"
+    },
+    "main-src",
+    "package.json"
+  ],
+  "mac": {
+    "target": "dir",
+    "category": "public.app-category.music",
+    "extraFiles": [
+      {
+        "from": "mac-extra-files/ThirdPartyApps",
+        "to": "ThirdPartyApps"
+      }
+    ]
+  },
+  "win": {
+    "target": "dir",
+    "extraFiles": [
+      {
+        "from": "win-extra-files/ThirdPartyApps",
+        "to": "ThirdPartyApps"
+      }
+    ]
+  }
+}

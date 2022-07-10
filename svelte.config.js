@@ -1,0 +1,38 @@
+import adapter from '@sveltejs/adapter-static'
+import preprocess from 'svelte-preprocess'
+
+const config = {
+	kit: {
+		files: {
+			assets: 'static',
+			hooks: 'renderer-src/hooks',
+			lib: 'renderer-src/lib',
+			params: 'renderer-src/params',
+			routes: 'renderer-src/routes',
+			serviceWorker: 'renderer-src/service-worker',
+			template: 'renderer-src/app.html',
+		},
+		alias: {
+			$components: 'renderer-src/components',
+			$icons: 'renderer-src/icons',
+		},
+		prerender: {
+			default: true,
+		},
+		adapter: adapter(),
+		vite: {
+			server: {
+				fs: {
+					allow: ['./static/', './renderer-src/'],
+				},
+			},
+		},
+	},
+	preprocess: [
+		preprocess({
+			postcss: true,
+		}),
+	],
+}
+
+export default config
