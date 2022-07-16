@@ -97,11 +97,10 @@ function createWindow() {
     height: 600,
     webPreferences: {
       sandbox: true,
-      devTools: true, // devTools: process.env.NODE_ENV === 'dev',
+      devTools: process.env.NODE_ENV === 'dev',
       preload: path.resolve(path.join(__dirname, 'preload.cjs')),
     },
   })
-  mainWindow.webContents.openDevTools()
 
   processQueue.registerStatusUpdateCallback((message) => {
     mainWindow.webContents.send('videoStatusUpdate', message)
