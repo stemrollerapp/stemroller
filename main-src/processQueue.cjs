@@ -7,9 +7,8 @@ const treeKill = require('tree-kill')
 const ytdl = require('ytdl-core')
 const sanitizeFilename = require('sanitize-filename')
 
-let statusUpdateCallback = null
-let curItems = [],
-  curChildProcess = null
+let statusUpdateCallback = null, donateUpdateCallback = null
+let curItems = [], curChildProcess = null
 
 const OUTPUT_DIR = path.join(os.homedir(), 'Music', 'StemRoller')
 const PATH_TO_THIRD_PARTY_APPS =
@@ -23,7 +22,18 @@ const PATH_TO_THIRD_PARTY_APPS =
         )
       )
     : path.resolve(path.join(process.resourcesPath, '..', 'ThirdPartyApps'))
-const PATH_TO_DEMUCS = path.join(PATH_TO_THIRD_PARTY_APPS, 'demucs-pyinstaller')
+const PATH_TO_MODELS =
+  process.env.NODE_ENV === 'dev'
+    ? path.resolve(
+        path.join(
+          __dirname,
+          '..',
+          'anyos-extra-files',
+          'Models'
+        )
+      )
+    : path.resolve(path.join(process.resourcesPath, '..', 'Models'))
+const PATH_TO_DEMUCS = path.join(PATH_TO_THIRD_PARTY_APPS, 'demucs-cxfreeze')
 const PATH_TO_FFMPEG = path.join(PATH_TO_THIRD_PARTY_APPS, 'ffmpeg', 'bin')
 const CHILD_PROCESS_ENV = {
   CUDA_PATH: process.env.CUDA_PATH,
@@ -138,7 +148,7 @@ async function _processVideo(video, tmpDir) {
   console.log(
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
   )
-  await spawnAndWait(tmpDir, 'demucs-pyinstaller', [ytPath, '-n', DEMUCS_MODEL_NAME, '-j', jobCount])
+  await spawnAndWait(tmpDir, 'demucs-cxfreeze', [ytPath, '-n', DEMUCS_MODEL_NAME, '--repo', PATH_TO_MODELS, '-j', jobCount])
 
   const demucsBasePath = path.join(tmpDir, 'separated', DEMUCS_MODEL_NAME, ytFilename)
   const demucsPaths = {
@@ -254,13 +264,21 @@ function loadVideosDb() {
 }
 
 function saveFinishedToVideosDb() {
+  let numFinished = 0
   const filtered = {}
   for (const videoId in videosDb) {
     if (videosDb[videoId].status === 'done') {
       filtered[videoId] = videosDb[videoId]
+      ++numFinished
     }
   }
   electronStore.set('videosDb', filtered)
+
+  if (numFinished >= 3 && electronStore.get('canShowDonatePopup') !== false) {
+    donateUpdateCallback({
+      showDonatePopup: true,
+    })
+  }
 }
 
 function setVideoStatusAndPath(videoId, status, path) {
@@ -323,6 +341,10 @@ module.exports.isBusy = () => {
 
 module.exports.registerStatusUpdateCallback = (callback) => {
   statusUpdateCallback = callback
+}
+
+module.exports.registerDonateUpdateCallback = (callback) => {
+  donateUpdateCallback = callback
 }
 
 module.exports.deleteTmpFolders = async () => {

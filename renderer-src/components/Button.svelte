@@ -3,7 +3,7 @@
 
   let styles = null
   $: {
-    styles = 'flex items-center justify-center px-4 py-2 rounded-md text-slate-900 bg-cyan-500 focus:outline-none '
+    styles = 'whitespace-nowrap flex items-center justify-center px-4 py-2 rounded-md text-slate-900 bg-cyan-500 outline-none focus:outline-none '
     if (disabled) {
       styles += 'cursor-auto opacity-50'
     } else {

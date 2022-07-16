@@ -6,6 +6,8 @@ const serve = require('electron-serve')
 const Store = require('electron-store')
 const processQueue = require('./processQueue.cjs')
 
+let electronStore = null
+
 const loadURL = serve({ directory: 'renderer-build' })
 
 async function handleYouTubeSearch(event, query) {
@@ -60,6 +62,29 @@ async function handleOpenStemsPath(event, videoId) {
   }
 }
 
+async function handleOpenDonate() {
+  await shell.openExternal('https://www.stemroller.com/donate')
+  electronStore.set('canShowDonatePopup', false)
+  mainWindow.webContents.send('donateUpdate', {
+    showDonatePopup: false,
+  })
+}
+
+async function handleOpenSource() {
+  await shell.openExternal('https://www.stemroller.com/source')
+}
+
+async function handleOpenChat() {
+  await shell.openExternal('https://www.stemroller.com/chat')
+}
+
+async function handleDisableDonatePopup() {
+  electronStore.set('canShowDonatePopup', false)
+  mainWindow.webContents.send('donateUpdate', {
+    showDonatePopup: false,
+  })
+}
+
 let mainWindow = null
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -71,13 +96,19 @@ function createWindow() {
     width: 800,
     height: 600,
     webPreferences: {
-      devTools: false,
+      sandbox: true,
+      devTools: true, // devTools: process.env.NODE_ENV === 'dev',
       preload: path.resolve(path.join(__dirname, 'preload.cjs')),
     },
   })
+  mainWindow.webContents.openDevTools()
 
   processQueue.registerStatusUpdateCallback((message) => {
     mainWindow.webContents.send('videoStatusUpdate', message)
+  })
+
+  processQueue.registerDonateUpdateCallback((message) => {
+    mainWindow.webContents.send('donateUpdate', message)
   })
 
   mainWindow.on('ready-to-show', () => {
@@ -129,7 +160,8 @@ function main() {
   })
 
   app.whenReady().then(() => {
-    processQueue.setElectronStore(new Store())
+    electronStore = new Store()
+    processQueue.setElectronStore(electronStore)
 
     createWindow()
 
@@ -139,6 +171,10 @@ function main() {
     ipcMain.handle('getVideoPath', handleGetVideoPath)
     ipcMain.handle('deleteVideoStatusAndPath', handleDeleteVideoStatusAndPath)
     ipcMain.handle('openStemsPath', handleOpenStemsPath)
+    ipcMain.handle('openDonate', handleOpenDonate)
+    ipcMain.handle('openSource', handleOpenSource)
+    ipcMain.handle('openChat', handleOpenChat)
+    ipcMain.handle('disableDonatePopup', handleDisableDonatePopup)
   })
 
   app.on('window-all-closed', async () => {
@@ -148,7 +184,12 @@ function main() {
   })
 }
 
-Menu.setApplicationMenu(null)
+app.enableSandbox()
+
+if (process.env.NODE_ENV !== 'dev') {
+  Menu.setApplicationMenu(null)
+}
+
 if (app.requestSingleInstanceLock()) {
   main()
 } else {

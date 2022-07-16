@@ -8,9 +8,11 @@ node_modules
 .env.*
 !.env.example
 
-*-extra-files/ThirdPartyApps/demucs-pyinstaller/**
-!*-extra-files/ThirdPartyApps/demucs-pyinstaller/.gitkeep
+*-extra-files/ThirdPartyApps/demucs-cxfreeze/**
+!*-extra-files/ThirdPartyApps/demucs-cxfreeze/.gitkeep
 *-extra-files/ThirdPartyApps/ffmpeg/**
 !*-extra-files/ThirdPartyApps/ffmpeg/bin
 *-extra-files/ThirdPartyApps/ffmpeg/bin/**
 !*-extra-files/ThirdPartyApps/ffmpeg/bin/.gitkeep
+*-extra-files/Models/**
+!*-extra-files/Models/.gitkeep

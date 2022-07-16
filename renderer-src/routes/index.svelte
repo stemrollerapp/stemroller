@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte'
   import SearchAndResults from '$components/SearchAndResults.svelte'
   import ProcessQueue from '$components/ProcessQueue.svelte'
+  import BottomBar from '$components/BottomBar.svelte'
 
   let processQueueItems = []
 
@@ -41,4 +42,6 @@
   {#if processQueueItems.length > 0}
     <ProcessQueue items={processQueueItems} onSplitClicked={handleSplitClicked} />
   {/if}
+
+  <BottomBar />
 </div>

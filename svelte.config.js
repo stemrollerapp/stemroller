@@ -19,6 +19,14 @@ const config = {
 		prerender: {
 			default: true,
 		},
+		csp: {
+			mode: 'hash',
+			directives: {
+				'default-src': ['self'],
+				'img-src': ['self', 'https://img.youtube.com/'],
+				'object-src': ['none']
+			},
+		},
 		adapter: adapter(),
 		vite: {
 			server: {

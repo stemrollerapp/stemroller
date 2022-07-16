@@ -18,6 +18,18 @@ contextBridge.exposeInMainWorld('deleteVideoStatusAndPath', (videoId) =>
 contextBridge.exposeInMainWorld('openStemsPath', (videoId) =>
   ipcRenderer.invoke('openStemsPath', videoId)
 )
+contextBridge.exposeInMainWorld('openDonate', () =>
+  ipcRenderer.invoke('openDonate')
+)
+contextBridge.exposeInMainWorld('openSource', () =>
+  ipcRenderer.invoke('openSource')
+)
+contextBridge.exposeInMainWorld('openChat', () =>
+  ipcRenderer.invoke('openChat')
+)
+contextBridge.exposeInMainWorld('disableDonatePopup', () =>
+  ipcRenderer.invoke('disableDonatePopup')
+)
 
 let handlers = new Map()
 contextBridge.exposeInMainWorld(
@@ -50,5 +62,15 @@ ipcRenderer.on('videoStatusUpdate', (event, message) => {
     for (const handler of handlers.get(message.videoId).values()) {
       handler(message)
     }
+  }
+})
+
+let donateUpdateHandler = null
+contextBridge.exposeInMainWorld('setDonateUpdateHandler', (handlerFunction) => {
+  donateUpdateHandler = handlerFunction
+})
+ipcRenderer.on('donateUpdate', (event, message) => {
+  if (donateUpdateHandler) {
+    donateUpdateHandler(message)
   }
 })
