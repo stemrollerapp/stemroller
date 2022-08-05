@@ -36,5 +36,14 @@
         "to": "ThirdPartyApps"
       }
     ]
+  },
+  "linux": {
+    "target": "dir",
+    "extraFiles": [
+      {
+        "from": "linux-extra-files/ThirdPartyApps",
+        "to": "ThirdPartyApps"
+      }
+    ]
   }
 }

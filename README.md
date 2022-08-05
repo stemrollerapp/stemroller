@@ -38,6 +38,17 @@ Make sure you now have at least these executable files in both the following loc
 - `stemroller/mac-extra-files/ThirdPartyApps/ffmpeg/bin/ffprobe`
 - `stemroller/mac-extra-files/ThirdPartyApps/demucs-cxfreeze/demucs-cxfreeze`
 
+### Linux
+
+- Install ffmpeg using the download manager of your distro and place the `ffmpeg` and `ffprobe` executables inside `stemroller/linux-extra-files/ThirdPartyApps/ffmpeg/bin`
+- Check our the repository of [demucs-cxfreeze](https://github.com/stemrollerapp/demucs-cxfreeze/releases), perform the steps described at _'Freezing Demux'_ and place the contents of the `dist` folder in `stemroller/linux-extra-files/ThirdPartyApps/demucs-cxfreeze`
+
+Make sure you now have at least these executable files in both the following locations:
+
+- `stemroller/linux-extra-files/ThirdPartyApps/ffmpeg/bin/ffmpeg`
+- `stemroller/linux-extra-files/ThirdPartyApps/ffmpeg/bin/ffprobe`
+- `stemroller/linux-extra-files/ThirdPartyApps/demucs-cxfreeze/demucs-cxfreeze`
+
 ### Models
 
 Download the following files:
@@ -63,6 +74,10 @@ Place them inside the following directory: `stemroller/anyos-extra-files/Models`
 ### macOS
 
 `npm run build:mac`
+
+### Linux
+
+`npm run build:linux`
 
 ## License
 

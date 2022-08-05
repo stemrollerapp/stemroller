@@ -16,9 +16,11 @@
 		"dev:electron": "electron .",
 		"build:mac": "cross-env NODE_ENV=production npm run build:svelte && npm run build:electron:mac",
 		"build:win": "cross-env NODE_ENV=production npm run build:svelte && npm run build:electron:win",
+		"build:linux": "cross-env NODE_ENV=production npm run build:svelte && npm run build:electron:linux",
 		"build:svelte": "svelte-kit build",
 		"build:electron:mac": "electron-builder -m --config electron-builder.config.json",
 		"build:electron:win": "electron-builder -w --config electron-builder.config.json",
+		"build:electron:linux": "electron-builder -l --config electron-builder.config.json",
 		"start": "svelte-kit start"
 	},
 	"devDependencies": {
