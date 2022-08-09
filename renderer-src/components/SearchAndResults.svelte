@@ -27,6 +27,10 @@
     }
   }, 500)
 
+  function handleFileSelectClick() {
+    window.selectLocalFile()
+  }
+
   function handleSearchInput(event) {
     const query = event.target.value.trim()
 
@@ -67,7 +71,7 @@
       <div class="w-6 h-6 self-center animate-bounce text-slate-500 pointer-events-none">
         <ArrowUpIcon />
       </div>
-      <p class="m-4 text-slate-400 text-center">Type a song title in the search bar above.</p>
+      <p class="m-4 text-slate-400 text-center">Type a song title in the search bar above or <span on:click={handleFileSelectClick} class="border-solid underline cursor-pointer hover:opacity-75">select a local file</span>.</p>
     {/if}
   </div>
 </div>
