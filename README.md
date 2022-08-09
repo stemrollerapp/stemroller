@@ -66,7 +66,7 @@ Place them inside the following directory: `stemroller/anyos-extra-files/Models`
 
 Linux is not yet officially supported, but thanks to some kind contributors, we now have experimental Linux support if you're willing to run StemRoller from source. You can, of course, also run in development mode on Linux.
 
-`npm run start`
+`npm run build:svelte && npm run start`
 
 ## Production Build
 

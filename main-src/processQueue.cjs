@@ -59,14 +59,14 @@ const DEMUCS_EXE_NAME = PATH_TO_THIRD_PARTY_APPS ? 'demucs-cxfreeze' : 'demucs'
 const FFMPEG_EXE_NAME = 'ffmpeg'
 const CHILD_PROCESS_ENV = {
   CUDA_PATH: process.env.CUDA_PATH,
+  PATH: process.env.PATH,
   TEMP: process.env.TEMP,
   TMP: process.env.TMP,
 }
 if (PATH_TO_THIRD_PARTY_APPS) {
+  // Override the system's PATH with the path to our own bundled third-party apps
   CHILD_PROCESS_ENV.PATH =
     PATH_TO_DEMUCS + (process.platform === 'win32' ? ';' : ':') + PATH_TO_FFMPEG
-} else {
-  CHILD_PROCESS_ENV.PATH = process.env.PATH
 }
 const DEMUCS_MODEL_NAME = 'mdx_extra_q'
 const TMP_PREFIX = 'StemRoller-'

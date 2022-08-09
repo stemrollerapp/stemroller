@@ -130,7 +130,7 @@ function createWindow() {
     }
   })
 
-  if (process.env.NODE_ENV === 'dev') {
+  if (process.env.STEMROLLER_RUN_FROM_SOURCE) {
     const port = process.env.PORT || 3000
     mainWindow.loadURL(`http://localhost:${port}`)
   } else {
@@ -186,22 +186,33 @@ function main() {
 app.enableSandbox()
 
 if (process.env.NODE_ENV !== 'dev') {
-  Menu.setApplicationMenu(Menu.buildFromTemplate([{
-    label: "StemRoller",
-    submenu: [
-        { label: "Undo", accelerator: "CmdOrCtrl+Z", role: "undo" },
-        { label: "Redo", accelerator: "Shift+CmdOrCtrl+Z", role: "redo" },
-        { type: "separator" },
-        { label: "Cut", accelerator: "CmdOrCtrl+X", role: "cut" },
-        { label: "Copy", accelerator: "CmdOrCtrl+C", role: "copy" },
-        { label: "Paste", accelerator: "CmdOrCtrl+V", role: "paste" },
-        { label: "Select All", accelerator: "CmdOrCtrl+A", role: "selectAll" },
-        { type: "separator" },
-        { label: "Hide", accelerator: "CmdOrCtrl+H", role: "hide" },
-        { label: "Quit", accelerator: "CmdOrCtrl+Q", role: "quit" },
-      ]
-    }]
-  ))
+  if (process.platform === 'mac') {
+    Menu.setApplicationMenu(
+      Menu.buildFromTemplate([
+        {
+          label: 'StemRoller',
+          submenu: [
+            { label: 'Hide', accelerator: 'CmdOrCtrl+H', role: 'hide' },
+            { label: 'Quit', accelerator: 'CmdOrCtrl+Q', role: 'quit' },
+          ],
+        },
+        {
+          label: 'Edit',
+          submenu: [
+            { label: 'Undo', accelerator: 'CmdOrCtrl+Z', role: 'undo' },
+            { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', role: 'redo' },
+            { type: 'separator' },
+            { label: 'Cut', accelerator: 'CmdOrCtrl+X', role: 'cut' },
+            { label: 'Copy', accelerator: 'CmdOrCtrl+C', role: 'copy' },
+            { label: 'Paste', accelerator: 'CmdOrCtrl+V', role: 'paste' },
+            { label: 'Select All', accelerator: 'CmdOrCtrl+A', role: 'selectAll' },
+          ],
+        },
+      ])
+    )
+  } else {
+    Menu.setApplicationMenu(null)
+  }
 }
 
 if (app.requestSingleInstanceLock()) {

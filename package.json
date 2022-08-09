@@ -10,7 +10,7 @@
 	"repository": "https://github.com/stemrollerapp/stemroller.git",
 	"main": "main-src/main.cjs",
 	"scripts": {
-		"dev": "cross-env NODE_ENV=dev npm run dev:all",
+		"dev": "cross-env NODE_ENV=dev STEMROLLER_RUN_FROM_SOURCE=true npm run dev:all",
 		"dev:all": "concurrently -n=svelte,electron -c='#ff3e00',blue \"npm run dev:svelte\" \"npm run dev:electron\"",
 		"dev:svelte": "svelte-kit dev",
 		"dev:electron": "electron .",
@@ -19,9 +19,9 @@
 		"build:svelte": "svelte-kit build",
 		"build:electron:mac": "electron-builder -m --config electron-builder.config.json",
 		"build:electron:win": "electron-builder -w --config electron-builder.config.json",
-		"start": "cross-env NODE_ENV=production npm run start:all",
+		"start": "cross-env NODE_ENV=production STEMROLLER_RUN_FROM_SOURCE=true npm run start:all",
 		"start:all": "concurrently -n=svelte,electron -c='#ff3e00',blue \"npm run start:svelte\" \"npm run start:electron\"",
-		"start:svelte": "svelte-kit start",
+		"start:svelte": "svelte-kit preview",
 		"start:electron": "electron ."
 	},
 	"devDependencies": {
