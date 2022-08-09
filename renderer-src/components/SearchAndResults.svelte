@@ -6,6 +6,7 @@
   import ResultCard from '$components/ResultCard.svelte'
 
   export let onSplitClicked = null
+  export let onFileSelect = null
 
   let hasQuery = false
   let status = null
@@ -28,7 +29,22 @@
   }, 500)
 
   function handleFileSelectClick() {
-    window.selectLocalFile()
+    document.getElementById("file-select").click();
+  }
+
+  function onFileChange(event) {
+    const { files } = event.target;
+    const { path } = files[0];
+
+    if (!path) {
+      return;
+    }
+  
+    onFileSelect({
+      videoId: path,
+      title: path,
+      isLocalFile: true,
+    })
   }
 
   function handleSearchInput(event) {
@@ -72,6 +88,7 @@
         <ArrowUpIcon />
       </div>
       <p class="m-4 text-slate-400 text-center">Type a song title in the search bar above or <span on:click={handleFileSelectClick} class="border-solid underline cursor-pointer hover:opacity-75">select a local file</span>.</p>
+      <input class="hidden" accept=".mp3,.wav" type="file" on:change={onFileChange} id="file-select">
     {/if}
   </div>
 </div>

@@ -88,13 +88,27 @@ function spawnAndWait(cwd, command, args) {
   })
 }
 
-function asyncYtdl(videoId, downloadPath) {
+function asyncYtdl(videoId, destinationPath, isLocalFile) {
   return new Promise((resolve, reject) => {
+    // Handle local file select
+    if (isLocalFile) {
+      if (!ensureFileExists(videoId)) {
+        return reject();
+      }
+
+      fs.copyFile(
+        videoId,
+        destinationPath
+      )
+
+      return resolve();
+    }
+
     const ytdlStream = ytdl(videoId, {
       highWaterMark: 1024 * 1024 * 64,
       quality: 'highestaudio',
     })
-    const fileStream = createWriteStream(downloadPath)
+    const fileStream = createWriteStream(destinationPath)
     ytdlStream.pipe(fileStream)
 
     let canResolveReject = true
@@ -142,7 +156,7 @@ async function _processVideo(video, tmpDir) {
   const ytFilename = 'yt-audio'
   const ytPath = path.join(tmpDir, ytFilename)
   console.log(`Downloading YouTube video "${video.videoId}"; storing in "${ytPath}"`)
-  await asyncYtdl(video.videoId, ytPath)
+  await asyncYtdl(video.videoId, ytPath, video.isLocalFile)
 
   const jobCount = getJobCount()
   console.log(

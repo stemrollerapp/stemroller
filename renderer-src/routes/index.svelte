@@ -15,6 +15,10 @@
     processQueueItems = items
   }
 
+  function handleFileSelect(video) {
+    handleSplitClicked(video)
+  }
+
   $: {
     if (typeof window !== 'undefined') {
       window.setProcessQueueItems(processQueueItems)
@@ -37,7 +41,7 @@
 </script>
 
 <div class="w-full h-full overflow-hidden flex flex-col">
-  <SearchAndResults onSplitClicked={handleSplitClicked} />
+  <SearchAndResults onSplitClicked={handleSplitClicked} onFileSelect={handleFileSelect} />
 
   {#if processQueueItems.length > 0}
     <ProcessQueue items={processQueueItems} onSplitClicked={handleSplitClicked} />

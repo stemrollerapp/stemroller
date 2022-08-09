@@ -66,7 +66,7 @@
       </div>
     {/if}
     <div class="overflow-hidden flex-1 flex flex-col justify-center leading-snug">
-      <div class="whitespace-nowrap overflow-hidden text-ellipsis font-semibold">{video.title}</div>
+      <div class="whitespace-nowrap overflow-hidden text-ellipsis font-semibold {video.isLocalFile ? 'text-xs' : ''}">{video.title}</div>
       <div class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-400">
         {#if status === 'processing'}
           Processing
