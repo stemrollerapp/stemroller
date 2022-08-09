@@ -1,3 +1,5 @@
+_Wondering when your feature request or issue will be addressed? Please see the [StemRoller Roadmap](https://github.com/orgs/stemrollerapp/projects/1). Also, join our [Discord server](https://www.stemroller.com/chat) so we can communicate with you more directly_.
+
 # StemRoller
 
 StemRoller is the first free app which enables you to separate vocal and instrumental stems from any song with a single click! StemRoller uses Facebook's state-of-the-art [Demucs](https://github.com/facebookresearch/demucs) algorithm for demixing songs and integrates search results from YouTube.
@@ -38,7 +40,13 @@ Make sure you now have at least these executable files in both the following loc
 - `stemroller/mac-extra-files/ThirdPartyApps/ffmpeg/bin/ffprobe`
 - `stemroller/mac-extra-files/ThirdPartyApps/demucs-cxfreeze/demucs-cxfreeze`
 
+### Linux (Experimental)
+
+Install `ffmpeg` globally using your preferred package manager, and install `demucs` globally with `pip`.
+
 ### Models
+
+_Skip this step if you're running the experimental Linux version_.
 
 Download the following files:
 
@@ -53,6 +61,12 @@ Place them inside the following directory: `stemroller/anyos-extra-files/Models`
 ## Run in Development Mode
 
 `npm run dev`
+
+## Run in Production Mode (Linux)
+
+Linux is not yet officially supported, but thanks to some kind contributors, we now have experimental Linux support if you're willing to run StemRoller from source. You can, of course, also run in development mode on Linux.
+
+`npm run start`
 
 ## Production Build
 

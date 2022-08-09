@@ -7,39 +7,66 @@ const treeKill = require('tree-kill')
 const ytdl = require('ytdl-core')
 const sanitizeFilename = require('sanitize-filename')
 
-let statusUpdateCallback = null, donateUpdateCallback = null
-let curItems = [], curChildProcess = null
+let statusUpdateCallback = null,
+  donateUpdateCallback = null
+let curItems = [],
+  curChildProcess = null
+
+function getPathToThirdPartyApps() {
+  if (process.env.NODE_ENV === 'dev') {
+    if (process.platform === 'win32') {
+      return path.resolve(path.join(__dirname, '..', 'win-extra-files', 'ThirdPartyApps'))
+    } else if (process.platform === 'mac') {
+      return path.resolve(path.join(__dirname, '..', 'mac-extra-files', 'ThirdPartyApps'))
+    } else {
+      return null
+    }
+  } else {
+    if (process.platform === 'win32' || process.platform === 'mac') {
+      return path.resolve(path.join(process.resourcesPath, '..', 'ThirdPartyApps'))
+    } else {
+      return null
+    }
+  }
+}
+
+function getPathToModels() {
+  if (process.env.NODE_ENV === 'dev') {
+    if (process.platform === 'win32' || process.platform === 'mac') {
+      return path.resolve(path.join(__dirname, '..', 'anyos-extra-files', 'Models'))
+    } else {
+      return null
+    }
+  } else {
+    if (process.platform === 'win32' || process.platform === 'mac') {
+      return path.resolve(path.join(process.resourcesPath, '..', 'Models'))
+    } else {
+      return null
+    }
+  }
+}
 
 const OUTPUT_DIR = path.join(os.homedir(), 'Music', 'StemRoller')
-const PATH_TO_THIRD_PARTY_APPS =
-  process.env.NODE_ENV === 'dev'
-    ? path.resolve(
-        path.join(
-          __dirname,
-          '..',
-          `${process.platform === 'win32' ? 'win' : 'mac'}-extra-files`,
-          'ThirdPartyApps'
-        )
-      )
-    : path.resolve(path.join(process.resourcesPath, '..', 'ThirdPartyApps'))
-const PATH_TO_MODELS =
-  process.env.NODE_ENV === 'dev'
-    ? path.resolve(
-        path.join(
-          __dirname,
-          '..',
-          'anyos-extra-files',
-          'Models'
-        )
-      )
-    : path.resolve(path.join(process.resourcesPath, '..', 'Models'))
-const PATH_TO_DEMUCS = path.join(PATH_TO_THIRD_PARTY_APPS, 'demucs-cxfreeze')
-const PATH_TO_FFMPEG = path.join(PATH_TO_THIRD_PARTY_APPS, 'ffmpeg', 'bin')
+const PATH_TO_THIRD_PARTY_APPS = getPathToThirdPartyApps()
+const PATH_TO_MODELS = getPathToModels()
+const PATH_TO_DEMUCS = PATH_TO_THIRD_PARTY_APPS
+  ? path.join(PATH_TO_THIRD_PARTY_APPS, 'demucs-cxfreeze')
+  : null
+const PATH_TO_FFMPEG = PATH_TO_THIRD_PARTY_APPS
+  ? path.join(PATH_TO_THIRD_PARTY_APPS, 'ffmpeg', 'bin')
+  : null
+const DEMUCS_EXE_NAME = PATH_TO_THIRD_PARTY_APPS ? 'demucs-cxfreeze' : 'demucs'
+const FFMPEG_EXE_NAME = 'ffmpeg'
 const CHILD_PROCESS_ENV = {
   CUDA_PATH: process.env.CUDA_PATH,
-  PATH: PATH_TO_DEMUCS + (process.platform === 'win32' ? ';' : ':') + PATH_TO_FFMPEG,
   TEMP: process.env.TEMP,
   TMP: process.env.TMP,
+}
+if (PATH_TO_THIRD_PARTY_APPS) {
+  CHILD_PROCESS_ENV.PATH =
+    PATH_TO_DEMUCS + (process.platform === 'win32' ? ';' : ':') + PATH_TO_FFMPEG
+} else {
+  CHILD_PROCESS_ENV.PATH = process.env.PATH
 }
 const DEMUCS_MODEL_NAME = 'mdx_extra_q'
 const TMP_PREFIX = 'StemRoller-'
@@ -148,7 +175,17 @@ async function _processVideo(video, tmpDir) {
   console.log(
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
   )
-  await spawnAndWait(tmpDir, 'demucs-cxfreeze', [ytPath, '-n', DEMUCS_MODEL_NAME, '--repo', PATH_TO_MODELS, '-j', jobCount])
+  const demucsExeArgs = [
+    ytPath,
+    '-n',
+    DEMUCS_MODEL_NAME,
+    '-j',
+    jobCount,
+  ]
+  if (PATH_TO_MODELS) {
+    demucsExeArgs.push('--repo', PATH_TO_MODELS)
+  }
+  await spawnAndWait(tmpDir, DEMUCS_EXE_NAME, demucsExeArgs)
 
   const demucsBasePath = path.join(tmpDir, 'separated', DEMUCS_MODEL_NAME, ytFilename)
   const demucsPaths = {
@@ -165,7 +202,7 @@ async function _processVideo(video, tmpDir) {
 
   const instrumentalPath = path.join(tmpDir, 'instrumental.wav')
   console.log(`Mixing down instrumental stems to "${instrumentalPath}"`)
-  await spawnAndWait(tmpDir, 'ffmpeg', [
+  await spawnAndWait(tmpDir, FFMPEG_EXE_NAME, [
     '-i',
     demucsPaths.bass,
     '-i',

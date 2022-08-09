@@ -19,7 +19,10 @@
 		"build:svelte": "svelte-kit build",
 		"build:electron:mac": "electron-builder -m --config electron-builder.config.json",
 		"build:electron:win": "electron-builder -w --config electron-builder.config.json",
-		"start": "svelte-kit start"
+		"start": "cross-env NODE_ENV=production npm run start:all",
+		"start:all": "concurrently -n=svelte,electron -c='#ff3e00',blue \"npm run start:svelte\" \"npm run start:electron\"",
+		"start:svelte": "svelte-kit start",
+		"start:electron": "electron ."
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^1.0.0-next.34",
