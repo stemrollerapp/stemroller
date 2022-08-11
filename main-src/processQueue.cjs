@@ -142,6 +142,18 @@ function asyncYtdl(videoId, downloadPath) {
   })
 }
 
+async function findDemucsOutputDir(basePath) {
+  const entries = await fs.readdir(basePath, {
+    withFileTypes: true,
+  })
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      return path.join(basePath, entry.name)
+    }
+  }
+  throw new Error('Unable to find Demucs output directory')
+}
+
 async function ensureFileExists(path) {
   try {
     await fs.access(path)
@@ -166,17 +178,26 @@ async function _processVideo(video, tmpDir) {
   console.log(`BEGIN processing video "${video.videoId}" - "${video.title}"`)
   setVideoStatusAndPath(video.videoId, 'processing', null)
 
-  const ytFilename = 'yt-audio'
-  const ytPath = path.join(tmpDir, ytFilename)
-  console.log(`Downloading YouTube video "${video.videoId}"; storing in "${ytPath}"`)
-  await asyncYtdl(video.videoId, ytPath)
+  let mediaPath = null
+
+  if (video.mediaSource === 'youtube') {
+    const ytFilename = 'yt-audio'
+    const ytPath = path.join(tmpDir, ytFilename)
+    console.log(`Downloading YouTube video "${video.videoId}"; storing in "${ytPath}"`)
+    await asyncYtdl(video.videoId, ytPath)
+    mediaPath = ytPath
+  } else if (video.mediaSource === 'local') {
+    mediaPath = video.localInputPath
+  } else {
+    throw new Error(`Invalid mediaSource: ${video.mediaSource}`)
+  }
 
   const jobCount = getJobCount()
   console.log(
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
   )
   const demucsExeArgs = [
-    ytPath,
+    mediaPath,
     '-n',
     DEMUCS_MODEL_NAME,
     '-j',
@@ -187,7 +208,7 @@ async function _processVideo(video, tmpDir) {
   }
   await spawnAndWait(tmpDir, DEMUCS_EXE_NAME, demucsExeArgs)
 
-  const demucsBasePath = path.join(tmpDir, 'separated', DEMUCS_MODEL_NAME, ytFilename)
+  const demucsBasePath = await findDemucsOutputDir(path.join(tmpDir, 'separated', DEMUCS_MODEL_NAME))
   const demucsPaths = {
     bass: path.join(demucsBasePath, 'bass.wav'),
     drums: path.join(demucsBasePath, 'drums.wav'),

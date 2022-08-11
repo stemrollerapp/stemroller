@@ -10,7 +10,7 @@
   export let video = null, onSplitClicked = null
 
   async function handleOpenStemsClicked() {
-    const result = await window.openStemsPath(video.videoId)
+    const result = await window.openStemsPath(video)
     if (result === 'split') {
       onSplitClicked(video, true)
     }
@@ -51,7 +51,7 @@
     {:else if status === 'done'}
       <Button Icon={ExternalLinkIcon} text="Open" onClick={handleOpenStemsClicked} />
     {:else}
-      <Button Icon={AdjustmentsIcon} text="Split" onClick={() => onSplitClicked(video, false)} />
+      <Button Icon={AdjustmentsIcon} text="Split" onClick={() => onSplitClicked({ mediaSource: 'youtube', ...video }, false)} />
     {/if}
   </div>
 </div>

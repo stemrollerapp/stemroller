@@ -1,6 +1,8 @@
 const { app, ipcMain, dialog, shell, Menu, BrowserWindow } = require('electron')
-const fs = require('fs/promises')
+const fs = require('fs')
+const fsPromises = require('fs/promises')
 const path = require('path')
+const xxhash = require('xxhash-wasm')
 const ytSearch = require('yt-search')
 const serve = require('electron-serve')
 const Store = require('electron-store')
@@ -9,6 +11,18 @@ const processQueue = require('./processQueue.cjs')
 let electronStore = null
 
 const loadURL = serve({ directory: 'renderer-build' })
+
+function handleComputeLocalFileHash(event, path) {
+  return new Promise((resolve, reject) => {
+    xxhash().then((hasher) => {
+      const h64 = hasher.create64()
+      const stream = fs.createReadStream(path)
+      stream.on('error', (err) => reject(err))
+      stream.on('data', (chunk) => h64.update(chunk))
+      stream.on('end', () => resolve(h64.digest().toString(16).padStart(16, 0)))
+    })
+  })
+}
 
 async function handleYouTubeSearch(event, query) {
   return JSON.parse(JSON.stringify(await ytSearch(query)))
@@ -30,15 +44,15 @@ async function handleDeleteVideoStatusAndPath(event, videoId) {
   return processQueue.deleteVideoStatusAndPath(videoId)
 }
 
-async function handleOpenStemsPath(event, videoId) {
-  const videoPath = processQueue.getVideoPath(videoId)
+async function handleOpenStemsPath(event, video) {
+  const videoPath = processQueue.getVideoPath(video.videoId)
 
   let exists = null
   try {
-    await fs.access(videoPath)
+    await fsPromises.access(videoPath)
     exists = true
   } catch (error) {
-    processQueue.deleteVideoStatusAndPath(videoId)
+    processQueue.deleteVideoStatusAndPath(video.videoId)
     exists = false
   }
 
@@ -46,18 +60,30 @@ async function handleOpenStemsPath(event, videoId) {
     await shell.openPath(videoPath)
     return 'found'
   } else {
-    const response = dialog.showMessageBoxSync(mainWindow, {
-      type: 'warning',
-      buttons: ['Yes', 'No'],
-      title: 'Folder Not Found',
-      message:
-        "The folder containing this song's stems has been moved or deleted. Would you like to split this song again?",
-    })
+    if (video.mediaSource === 'youtube') {
+      const response = dialog.showMessageBoxSync(mainWindow, {
+        type: 'warning',
+        buttons: ['Yes', 'No'],
+        title: 'Folder Not Found',
+        message:
+          "The folder containing this song's stems has been moved or deleted. Would you like to split this song again?",
+      })
 
-    if (response === 0) {
-      return 'split'
-    } else {
+      if (response === 0) {
+        return 'split'
+      } else {
+        return 'not-found'
+      }
+    } else if (video.mediaSource === 'local') {
+      dialog.showMessageBoxSync(mainWindow, {
+        type: 'warning',
+        title: 'Folder Not Found',
+        message: "The folder containing this song's stems has been moved or deleted. If you would like to split this song again, simply select the original local file or drag-and-drop it onto the StemRoller window."
+      })
+
       return 'not-found'
+    } else {
+      throw new Error(`Invalid mediaSource: ${video.mediaSource}`)
     }
   }
 }
@@ -164,6 +190,7 @@ function main() {
 
     createWindow()
 
+    ipcMain.handle('computeLocalFileHash', handleComputeLocalFileHash)
     ipcMain.handle('youtubeSearch', handleYouTubeSearch)
     ipcMain.handle('setProcessQueueItems', handleSetProcessQueueItems)
     ipcMain.handle('getVideoStatus', handleGetVideoStatus)

@@ -2,14 +2,19 @@
   import debounce from 'lodash.debounce'
   import ArrowUpIcon from '$icons/outline/ArrowUpIcon.svelte'
   import SearchIcon from '$icons/outline/SearchIcon.svelte'
+  import CursorClickIcon from '$icons/outline/CursorClickIcon.svelte'
   import LoadingSpinnerIcon from '$icons/animated/LoadingSpinnerIcon.svelte'
   import ResultCard from '$components/ResultCard.svelte'
 
   export let onSplitClicked = null
+  export let onFileSelected = null
 
   let hasQuery = false
   let status = null
   let videos = null
+
+  let dndFileExplorerName = 'File Explorer'
+  let dndTipVisible = false
 
   const debouncedSearch = debounce(async (query) => {
     try {
@@ -41,6 +46,24 @@
       hasQuery = false
     }
   }
+
+  function handleSelectFile() {
+    const input = document.createElement('input')
+    input.accept = 'audio/*'
+    input.type = 'file'
+    input.addEventListener('change', (event) => {
+      for (const file of event.target.files) {
+        onFileSelected(file.path)
+      }
+    })
+    input.click()
+  }
+
+  $: {
+    if (typeof navigator !== 'undefined' && navigator.platform.toLowerCase().indexOf('mac') !== -1) {
+      dndFileExplorerName = 'Finder'
+    }
+  }
 </script>
 
 <div class="grow shrink overflow-hidden flex flex-col bg-slate-900 text-slate-100">
@@ -67,7 +90,14 @@
       <div class="w-6 h-6 self-center animate-bounce text-slate-500 pointer-events-none">
         <ArrowUpIcon />
       </div>
-      <p class="m-4 text-slate-400 text-center">Type a song title in the search bar above.</p>
+      <p class="m-4 text-slate-400 text-center">Type any song title in the search bar above,<br />or <button class="text-cyan-500 underline" on:click={handleSelectFile} on:mouseenter={() => dndTipVisible = true} on:mouseleave={() => dndTipVisible = false}>select a local file</button> stored on your device.</p>
+
+      <div class={`m-auto max-w-md flex flex-row space-x-2 px-4 py-3 drop-shadow-lg bg-slate-800 text-slate-300 rounded-md border-solid border border-slate-700 transition-opacity ${dndTipVisible ? 'opacity-100' : 'opacity-0'}`}>
+        <div class="grow-0 shrink-0 w-6 h-6">
+          <CursorClickIcon />
+        </div>
+        <p><span class="font-bold">Pro tip</span>: you can also drag local files from {dndFileExplorerName} and drop them onto this window to split them.</p>
+      </div>
     {/if}
   </div>
 </div>

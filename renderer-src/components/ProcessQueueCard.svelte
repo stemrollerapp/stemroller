@@ -11,7 +11,7 @@
   let hovered = false
 
   async function handleOpenStemsClicked() {
-    const result = await window.openStemsPath(video.videoId)
+    const result = await window.openStemsPath(video)
     if (result === 'split') {
       onSplitClicked(video, true)
     }

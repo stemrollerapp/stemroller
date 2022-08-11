@@ -5,7 +5,7 @@
   export let onDonateClick = null, onCloseClick = null
 </script>
 
-<div class="absolute flex flex-col space-y-2 left-2 bottom-10 z-[9999] max-w-md px-4 py-3 drop-shadow-lg bg-slate-800 text-slate-300 rounded-md border-solid border border-slate-700">
+<div class="absolute flex flex-col space-y-2 left-2 bottom-12 z-[9999] max-w-md px-4 py-3 drop-shadow-lg bg-slate-800 text-slate-300 rounded-md border-solid border border-slate-700">
 
   <div class="space-x-2 flex flex-row items-center">
     <div class="w-6 h-6 grow-0 shrink-0">
