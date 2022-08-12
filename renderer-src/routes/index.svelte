@@ -16,6 +16,14 @@
     processQueueItems = items
   }
 
+  async function handleCancelClicked(video) {
+    processQueueItems = processQueueItems.filter(item => item.videoId !== video.videoId)
+    const status = await window.getVideoStatus(video.videoId)
+    if (status !== 'done') {
+      await window.deleteVideoStatusAndPath(video.videoId)
+    }
+  }
+
   function filePathToTitle(path) {
     const pathParts = path.split(/\/|\\/g).filter((s) => !!s)
     if (pathParts.length === 0) {
@@ -71,7 +79,7 @@
   <SearchAndResults onSplitClicked={handleSplitClicked} onFileSelected={handleFileSelected} />
 
   {#if processQueueItems.length > 0}
-    <ProcessQueue items={processQueueItems} onSplitClicked={handleSplitClicked} />
+    <ProcessQueue items={processQueueItems} onSplitClicked={handleSplitClicked} onCancelClicked={handleCancelClicked} />
   {/if}
 
   <BottomBar />

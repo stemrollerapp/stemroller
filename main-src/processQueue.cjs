@@ -10,7 +10,9 @@ const sanitizeFilename = require('sanitize-filename')
 let statusUpdateCallback = null,
   donateUpdateCallback = null
 let curItems = [],
-  curChildProcess = null
+  curChildProcess = null,
+  curYtdlStream = null,
+  curYtFileStream = null
 
 function getPathToThirdPartyApps() {
   if (process.env.NODE_ENV === 'dev') {
@@ -79,6 +81,26 @@ function getJobCount() {
 }
 
 function killCurChildProcess() {
+  if (curYtdlStream) {
+    try {
+      console.log('Destroy curYtdlStream')
+      curYtdlStream.destroy(new Error('Task canceled by user'))
+    } catch (err) {
+      console.trace(`curYtdlStream.destroy failed: ${err}`)
+    }
+    curYtdlStream = null
+  }
+
+  if (curYtFileStream) {
+    try {
+      console.log('Destroy curYtFileStream')
+      curYtFileStream.destroy(new Error('Task canceled by user'))
+    } catch (err) {
+      console.trace(`curYtFileStream.destroy failed: ${err}`)
+    }
+    curYtFileStream = null
+  }
+
   if (curChildProcess) {
     try {
       console.log(`treeKill process ${curChildProcess.pid}`)
@@ -117,16 +139,14 @@ function spawnAndWait(cwd, command, args) {
 
 function asyncYtdl(videoId, downloadPath) {
   return new Promise((resolve, reject) => {
-    const ytdlStream = ytdl(videoId, {
+    curYtdlStream = ytdl(videoId, {
       highWaterMark: 1024 * 1024 * 64,
       quality: 'highestaudio',
     })
-    const fileStream = createWriteStream(downloadPath)
-    ytdlStream.pipe(fileStream)
+    curYtFileStream = createWriteStream(downloadPath)
+    curYtdlStream.pipe(curYtFileStream)
 
-    let canResolveReject = true
-
-    for (const stream of [ytdlStream, fileStream]) {
+    for (const stream of [curYtdlStream, curYtFileStream]) {
       stream.on('finish', () => {
         resolve()
       })
@@ -273,7 +293,13 @@ async function processVideo(video) {
     await _processVideo(video, tmpDir)
   } catch (err) {
     console.trace(err)
-    setVideoStatusAndPath(video.videoId, 'error', null)
+
+    const status = module.exports.getVideoStatus(video.videoId)
+    if (status === null) {
+      console.log('Task was canceled by user.')
+    } else {
+      setVideoStatusAndPath(video.videoId, 'error', null)
+    }
   } finally {
     try {
       await fs.rm(tmpDir, {
@@ -317,8 +343,27 @@ module.exports.setItems = async (items) => {
 let electronStore = null
 let videosDb = {}
 
-function loadVideosDb() {
-  videosDb = electronStore.get('videosDb') || {}
+async function loadVideosDb() {
+  const loaded = electronStore.get('videosDb') || {}
+  const filtered = {}
+
+  for (const videoId in loaded) {
+    let exists = false
+
+    try {
+      await fs.access(loaded[videoId].path)
+      exists = true
+    } catch (error) {
+      exists = false
+    }
+
+    if (exists) {
+      filtered[videoId] = loaded[videoId]
+    }
+  }
+
+  videosDb = filtered
+  electronStore.set('videosDb', videosDb)
 }
 
 function saveFinishedToVideosDb() {
