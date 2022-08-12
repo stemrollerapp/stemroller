@@ -140,6 +140,7 @@ function createWindow() {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+    checkForUpdates()
   })
 
   mainWindow.on('close', (event) => {
@@ -174,7 +175,7 @@ async function checkForUpdates() {
     const versionDifference = compareVersions(remotePackageJson.version, app.getVersion())
 
     if (versionDifference > 0) {
-      const response = dialog.showMessageBoxSync(mainWindow, {
+      const { response } = await dialog.showMessageBox(mainWindow, {
         type: 'info',
         buttons: ['Yes', 'No'],
         title: 'Update available!',
@@ -227,8 +228,6 @@ function main() {
     ipcMain.handle('openSource', handleOpenSource)
     ipcMain.handle('openChat', handleOpenChat)
     ipcMain.handle('disableDonatePopup', handleDisableDonatePopup)
-
-    checkForUpdates()
   })
 
   app.on('window-all-closed', async () => {
