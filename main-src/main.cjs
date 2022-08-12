@@ -2,6 +2,8 @@ const { app, ipcMain, dialog, shell, Menu, BrowserWindow } = require('electron')
 const fs = require('fs')
 const fsPromises = require('fs/promises')
 const path = require('path')
+const compareVersions = require('compare-versions')
+const fetch = require('electron-fetch').default
 const xxhash = require('xxhash-wasm')
 const ytSearch = require('yt-search')
 const serve = require('electron-serve')
@@ -164,6 +166,30 @@ function createWindow() {
   }
 }
 
+async function checkForUpdates() {
+  try {
+    const remotePackageReq = await fetch('https://raw.githubusercontent.com/stemrollerapp/stemroller/main/package.json')
+    const remotePackageJson = await remotePackageReq.json()
+
+    const versionDifference = compareVersions(remotePackageJson.version, app.getVersion())
+
+    if (versionDifference > 0) {
+      const response = dialog.showMessageBoxSync(mainWindow, {
+        type: 'info',
+        buttons: ['Yes', 'No'],
+        title: 'Update available!',
+        message: `An update is available! Would you like to visit the StemRoller website and download it now?\n\nYou are using: ${app.getVersion()}\nUpdated version: ${remotePackageJson.version}.`,
+      })
+
+      if (response === 0) {
+        await shell.openExternal('https://www.stemroller.com')
+      }
+    }
+  } catch (err) {
+    console.error(`Update check failed: ${err}`)
+  }
+}
+
 function main() {
   // No await here because we don't want to slow down application launch time waiting to be able to delete folders...
   processQueue.deleteTmpFolders()
@@ -201,6 +227,8 @@ function main() {
     ipcMain.handle('openSource', handleOpenSource)
     ipcMain.handle('openChat', handleOpenChat)
     ipcMain.handle('disableDonatePopup', handleDisableDonatePopup)
+
+    checkForUpdates()
   })
 
   app.on('window-all-closed', async () => {
