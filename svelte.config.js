@@ -28,13 +28,6 @@ const config = {
 			},
 		},
 		adapter: adapter(),
-		vite: {
-			server: {
-				fs: {
-					allow: ['./static/', './renderer-src/'],
-				},
-			},
-		},
 	},
 	preprocess: [
 		preprocess({

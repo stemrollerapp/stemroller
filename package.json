@@ -12,7 +12,7 @@
 	"scripts": {
 		"dev": "cross-env NODE_ENV=dev STEMROLLER_RUN_FROM_SOURCE=true npm run dev:all",
 		"dev:all": "concurrently -k -n=svelte,electron -c='#ff3e00',blue \"npm run dev:svelte\" \"npm run dev:electron\"",
-		"dev:svelte": "svelte-kit dev",
+		"dev:svelte": "vite dev",
 		"dev:electron": "electron .",
 		"build:mac": "cross-env NODE_ENV=production npm run build:svelte && npm run build:electron:mac",
 		"build:win": "cross-env NODE_ENV=production npm run build:svelte && npm run build:electron:win",

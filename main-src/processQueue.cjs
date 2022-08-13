@@ -1,6 +1,7 @@
 const os = require('os')
-const { createWriteStream } = require('fs')
 const fs = require('fs/promises')
+const { createWriteStream } = require('fs')
+const { pipeline } = require('stream/promises')
 const path = require('path')
 const childProcess = require('child_process')
 const treeKill = require('tree-kill')
@@ -11,20 +12,19 @@ let statusUpdateCallback = null,
   donateUpdateCallback = null
 let curItems = [],
   curChildProcess = null,
-  curYtdlStream = null,
-  curYtFileStream = null
+  curYtdlAbortController = null
 
 function getPathToThirdPartyApps() {
   if (process.env.NODE_ENV === 'dev') {
     if (process.platform === 'win32') {
       return path.resolve(path.join(__dirname, '..', 'win-extra-files', 'ThirdPartyApps'))
-    } else if (process.platform === 'mac') {
+    } else if (process.platform === 'darwin') {
       return path.resolve(path.join(__dirname, '..', 'mac-extra-files', 'ThirdPartyApps'))
     } else {
       return null
     }
   } else {
-    if (process.platform === 'win32' || process.platform === 'mac') {
+    if (process.platform === 'win32' || process.platform === 'darwin') {
       return path.resolve(path.join(process.resourcesPath, '..', 'ThirdPartyApps'))
     } else {
       return null
@@ -34,13 +34,13 @@ function getPathToThirdPartyApps() {
 
 function getPathToModels() {
   if (process.env.NODE_ENV === 'dev') {
-    if (process.platform === 'win32' || process.platform === 'mac') {
+    if (process.platform === 'win32' || process.platform === 'darwin') {
       return path.resolve(path.join(__dirname, '..', 'anyos-extra-files', 'Models'))
     } else {
       return null
     }
   } else {
-    if (process.platform === 'win32' || process.platform === 'mac') {
+    if (process.platform === 'win32' || process.platform === 'darwin') {
       return path.resolve(path.join(process.resourcesPath, '..', 'Models'))
     } else {
       return null
@@ -81,29 +81,15 @@ function getJobCount() {
 }
 
 function killCurChildProcess() {
-  if (curYtdlStream) {
-    try {
-      console.log('Destroy curYtdlStream')
-      curYtdlStream.destroy(new Error('Task canceled by user'))
-    } catch (err) {
-      console.trace(`curYtdlStream.destroy failed: ${err}`)
-    }
-    curYtdlStream = null
-  }
-
-  if (curYtFileStream) {
-    try {
-      console.log('Destroy curYtFileStream')
-      curYtFileStream.destroy(new Error('Task canceled by user'))
-    } catch (err) {
-      console.trace(`curYtFileStream.destroy failed: ${err}`)
-    }
-    curYtFileStream = null
+  if (curYtdlAbortController) {
+    console.log('Aborting ytdl pipeline')
+    curYtdlAbortController.abort()
+    curYtdlAbortController = null
   }
 
   if (curChildProcess) {
     try {
-      console.log(`treeKill process ${curChildProcess.pid}`)
+      console.trace(`treeKill process ${curChildProcess.pid}`)
       treeKill(curChildProcess.pid)
     } catch (err) {
       console.trace(`treeKill failed: ${err}`)
@@ -137,29 +123,17 @@ function spawnAndWait(cwd, command, args) {
   })
 }
 
-function asyncYtdl(videoId, downloadPath) {
-  return new Promise((resolve, reject) => {
-    curYtdlStream = ytdl(videoId, {
-      highWaterMark: 1024 * 1024 * 64,
-      quality: 'highestaudio',
-    })
-    curYtFileStream = createWriteStream(downloadPath)
-    curYtdlStream.pipe(curYtFileStream)
-
-    for (const stream of [curYtdlStream, curYtFileStream]) {
-      stream.on('finish', () => {
-        resolve()
-      })
-
-      stream.on('error', (error) => {
-        reject(error)
-      })
-
-      stream.on('close', (error) => {
-        reject(new Error('Stream closed prematurely'))
-      })
-    }
+async function asyncYtdl(videoId, downloadPath) {
+  curYtdlAbortController = new AbortController()
+  const ytdlStream = ytdl(videoId, {
+    highWaterMark: 1024 * 1024 * 64,
+    quality: 'highestaudio',
   })
+  const fileStream = createWriteStream(downloadPath)
+  await pipeline(ytdlStream, fileStream, {
+    signal: curYtdlAbortController.signal,
+  })
+  curYtdlAbortController = null
 }
 
 async function findDemucsOutputDir(basePath) {

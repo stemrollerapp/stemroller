@@ -160,7 +160,7 @@ function createWindow() {
   })
 
   if (process.env.STEMROLLER_RUN_FROM_SOURCE) {
-    const port = process.env.PORT || 3000
+    const port = process.env.PORT || 5173
     mainWindow.loadURL(`http://localhost:${port}`)
   } else {
     loadURL(mainWindow)
@@ -240,7 +240,7 @@ function main() {
 app.enableSandbox()
 
 if (process.env.NODE_ENV !== 'dev') {
-  if (process.platform === 'mac') {
+  if (process.platform === 'darwin') {
     Menu.setApplicationMenu(
       Menu.buildFromTemplate([
         {
