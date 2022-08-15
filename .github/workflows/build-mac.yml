@@ -1,0 +1,27 @@
+name: build-mac
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-mac:
+    name: Build StemRoller for macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: main
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: 'npm'
+      - run: npm i -D
+      - run: npm run download-third-party-apps
+      - run: npm run build:mac
+      - uses: tyankatsu0105/read-package-version-actions@v1
+        id: package-version
+      - run: ditto -c -k --sequesterRsrc --keepParent dist/mac/StemRoller.app stemroller-${{ steps.package-version.outputs.version }}-mac.zip
+      - uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.package-version.outputs.version }}
+          files: stemroller-${{ steps.package-version.outputs.version }}-mac.zip

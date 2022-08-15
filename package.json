@@ -10,18 +10,19 @@
 	"repository": "https://github.com/stemrollerapp/stemroller.git",
 	"main": "main-src/main.cjs",
 	"scripts": {
+		"download-third-party-apps": "node download-third-party-apps.js",
 		"dev": "cross-env NODE_ENV=dev STEMROLLER_RUN_FROM_SOURCE=true npm run dev:all",
 		"dev:all": "concurrently -k -n=svelte,electron -c='#ff3e00',blue \"npm run dev:svelte\" \"npm run dev:electron\"",
 		"dev:svelte": "vite dev",
 		"dev:electron": "electron .",
 		"build:mac": "cross-env NODE_ENV=production npm run build:svelte && npm run build:electron:mac",
 		"build:win": "cross-env NODE_ENV=production npm run build:svelte && npm run build:electron:win",
-		"build:svelte": "svelte-kit build",
+		"build:svelte": "vite build",
 		"build:electron:mac": "electron-builder -m --config electron-builder.config.json",
 		"build:electron:win": "electron-builder -w --config electron-builder.config.json",
 		"start": "cross-env NODE_ENV=production STEMROLLER_RUN_FROM_SOURCE=true npm run start:all",
 		"start:all": "concurrently -k -n=svelte,electron -c='#ff3e00',blue \"npm run start:svelte\" \"npm run start:electron\"",
-		"start:svelte": "svelte-kit preview",
+		"start:svelte": "vite preview",
 		"start:electron": "electron ."
 	},
 	"devDependencies": {
@@ -39,8 +40,10 @@
 		"eslint": "^8.19.0",
 		"eslint-config-prettier": "^8.5.0",
 		"eslint-plugin-svelte3": "^4.0.0",
+		"extract-zip": "^2.0.1",
 		"heroicons": "^1.0.6",
 		"lodash.debounce": "^4.0.8",
+		"node-fetch": "^3.2.10",
 		"postcss": "^8.4.14",
 		"prettier": "^2.7.1",
 		"prettier-plugin-svelte": "^2.7.0",
@@ -57,6 +60,6 @@
 		"tree-kill": "^1.2.2",
 		"xxhash-wasm": "^1.0.1",
 		"yt-search": "^2.10.3",
-		"ytdl-core": "^4.10.0"
+		"ytdl-core": "^4.11.0"
 	}
 }
