@@ -1,5 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
+contextBridge.exposeInMainWorld('computeLocalFileHash', (path) =>
+  ipcRenderer.invoke('computeLocalFileHash', path)
+)
 contextBridge.exposeInMainWorld('youtubeSearch', (query) =>
   ipcRenderer.invoke('youtubeSearch', query)
 )

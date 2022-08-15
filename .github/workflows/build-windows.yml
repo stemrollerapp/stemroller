@@ -1,0 +1,28 @@
+name: build-windows
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-windows:
+    name: Build StemRoller for Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: main
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: 'npm'
+      - run: npm i -D
+      - run: npm run download-third-party-apps
+      - run: npm run build:win
+      - uses: tyankatsu0105/read-package-version-actions@v1
+        id: package-version
+      - run: Rename-Item dist\win-unpacked -NewName stemroller-${{ steps.package-version.outputs.version }}-win
+      - run: Compress-Archive dist\stemroller-${{ steps.package-version.outputs.version }}-win stemroller-${{ steps.package-version.outputs.version }}-win.zip
+      - uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.package-version.outputs.version }}
+          files: stemroller-${{ steps.package-version.outputs.version }}-win.zip

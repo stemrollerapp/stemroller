@@ -1,45 +1,74 @@
 const os = require('os')
-const { createWriteStream } = require('fs')
 const fs = require('fs/promises')
+const { createWriteStream } = require('fs')
+const { pipeline } = require('stream/promises')
 const path = require('path')
 const childProcess = require('child_process')
 const treeKill = require('tree-kill')
 const ytdl = require('ytdl-core')
 const sanitizeFilename = require('sanitize-filename')
 
-let statusUpdateCallback = null, donateUpdateCallback = null
-let curItems = [], curChildProcess = null
+let statusUpdateCallback = null,
+  donateUpdateCallback = null
+let curItems = [],
+  curChildProcess = null,
+  curYtdlAbortController = null
+
+function getPathToThirdPartyApps() {
+  if (process.env.NODE_ENV === 'dev') {
+    if (process.platform === 'win32') {
+      return path.resolve(path.join(__dirname, '..', 'win-extra-files', 'ThirdPartyApps'))
+    } else if (process.platform === 'darwin') {
+      return path.resolve(path.join(__dirname, '..', 'mac-extra-files', 'ThirdPartyApps'))
+    } else {
+      return null
+    }
+  } else {
+    if (process.platform === 'win32' || process.platform === 'darwin') {
+      return path.resolve(path.join(process.resourcesPath, '..', 'ThirdPartyApps'))
+    } else {
+      return null
+    }
+  }
+}
+
+function getPathToModels() {
+  if (process.env.NODE_ENV === 'dev') {
+    if (process.platform === 'win32' || process.platform === 'darwin') {
+      return path.resolve(path.join(__dirname, '..', 'anyos-extra-files', 'Models'))
+    } else {
+      return null
+    }
+  } else {
+    if (process.platform === 'win32' || process.platform === 'darwin') {
+      return path.resolve(path.join(process.resourcesPath, '..', 'Models'))
+    } else {
+      return null
+    }
+  }
+}
 
 const OUTPUT_DIR = path.join(os.homedir(), 'Music', 'StemRoller')
-const PATH_TO_THIRD_PARTY_APPS =
-  process.env.NODE_ENV === 'dev'
-    ? path.resolve(
-        path.join(
-          __dirname,
-          '..',
-          `${process.platform === 'win32' ? 'win' : 'mac'}-extra-files`,
-          'ThirdPartyApps'
-        )
-      )
-    : path.resolve(path.join(process.resourcesPath, '..', 'ThirdPartyApps'))
-const PATH_TO_MODELS =
-  process.env.NODE_ENV === 'dev'
-    ? path.resolve(
-        path.join(
-          __dirname,
-          '..',
-          'anyos-extra-files',
-          'Models'
-        )
-      )
-    : path.resolve(path.join(process.resourcesPath, '..', 'Models'))
-const PATH_TO_DEMUCS = path.join(PATH_TO_THIRD_PARTY_APPS, 'demucs-cxfreeze')
-const PATH_TO_FFMPEG = path.join(PATH_TO_THIRD_PARTY_APPS, 'ffmpeg', 'bin')
+const PATH_TO_THIRD_PARTY_APPS = getPathToThirdPartyApps()
+const PATH_TO_MODELS = getPathToModels()
+const PATH_TO_DEMUCS = PATH_TO_THIRD_PARTY_APPS
+  ? path.join(PATH_TO_THIRD_PARTY_APPS, 'demucs-cxfreeze')
+  : null
+const PATH_TO_FFMPEG = PATH_TO_THIRD_PARTY_APPS
+  ? path.join(PATH_TO_THIRD_PARTY_APPS, 'ffmpeg', 'bin')
+  : null
+const DEMUCS_EXE_NAME = PATH_TO_THIRD_PARTY_APPS ? 'demucs-cxfreeze' : 'demucs'
+const FFMPEG_EXE_NAME = 'ffmpeg'
 const CHILD_PROCESS_ENV = {
   CUDA_PATH: process.env.CUDA_PATH,
-  PATH: PATH_TO_DEMUCS + (process.platform === 'win32' ? ';' : ':') + PATH_TO_FFMPEG,
+  PATH: process.env.PATH,
   TEMP: process.env.TEMP,
   TMP: process.env.TMP,
+}
+if (PATH_TO_THIRD_PARTY_APPS) {
+  // Override the system's PATH with the path to our own bundled third-party apps
+  CHILD_PROCESS_ENV.PATH =
+    PATH_TO_DEMUCS + (process.platform === 'win32' ? ';' : ':') + PATH_TO_FFMPEG
 }
 const DEMUCS_MODEL_NAME = 'mdx_extra_q'
 const TMP_PREFIX = 'StemRoller-'
@@ -52,9 +81,15 @@ function getJobCount() {
 }
 
 function killCurChildProcess() {
+  if (curYtdlAbortController) {
+    console.log('Aborting ytdl pipeline')
+    curYtdlAbortController.abort()
+    curYtdlAbortController = null
+  }
+
   if (curChildProcess) {
     try {
-      console.log(`treeKill process ${curChildProcess.pid}`)
+      console.trace(`treeKill process ${curChildProcess.pid}`)
       treeKill(curChildProcess.pid)
     } catch (err) {
       console.trace(`treeKill failed: ${err}`)
@@ -88,31 +123,29 @@ function spawnAndWait(cwd, command, args) {
   })
 }
 
-function asyncYtdl(videoId, downloadPath) {
-  return new Promise((resolve, reject) => {
-    const ytdlStream = ytdl(videoId, {
-      highWaterMark: 1024 * 1024 * 64,
-      quality: 'highestaudio',
-    })
-    const fileStream = createWriteStream(downloadPath)
-    ytdlStream.pipe(fileStream)
-
-    let canResolveReject = true
-
-    for (const stream of [ytdlStream, fileStream]) {
-      stream.on('finish', () => {
-        resolve()
-      })
-
-      stream.on('error', (error) => {
-        reject(error)
-      })
-
-      stream.on('close', (error) => {
-        reject(new Error('Stream closed prematurely'))
-      })
-    }
+async function asyncYtdl(videoId, downloadPath) {
+  curYtdlAbortController = new AbortController()
+  const ytdlStream = ytdl(videoId, {
+    highWaterMark: 1024 * 1024 * 64,
+    quality: 'highestaudio',
   })
+  const fileStream = createWriteStream(downloadPath)
+  await pipeline(ytdlStream, fileStream, {
+    signal: curYtdlAbortController.signal,
+  })
+  curYtdlAbortController = null
+}
+
+async function findDemucsOutputDir(basePath) {
+  const entries = await fs.readdir(basePath, {
+    withFileTypes: true,
+  })
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      return path.join(basePath, entry.name)
+    }
+  }
+  throw new Error('Unable to find Demucs output directory')
 }
 
 async function ensureFileExists(path) {
@@ -139,18 +172,37 @@ async function _processVideo(video, tmpDir) {
   console.log(`BEGIN processing video "${video.videoId}" - "${video.title}"`)
   setVideoStatusAndPath(video.videoId, 'processing', null)
 
-  const ytFilename = 'yt-audio'
-  const ytPath = path.join(tmpDir, ytFilename)
-  console.log(`Downloading YouTube video "${video.videoId}"; storing in "${ytPath}"`)
-  await asyncYtdl(video.videoId, ytPath)
+  let mediaPath = null
+
+  if (video.mediaSource === 'youtube') {
+    const ytFilename = 'yt-audio'
+    const ytPath = path.join(tmpDir, ytFilename)
+    console.log(`Downloading YouTube video "${video.videoId}"; storing in "${ytPath}"`)
+    await asyncYtdl(video.videoId, ytPath)
+    mediaPath = ytPath
+  } else if (video.mediaSource === 'local') {
+    mediaPath = video.localInputPath
+  } else {
+    throw new Error(`Invalid mediaSource: ${video.mediaSource}`)
+  }
 
   const jobCount = getJobCount()
   console.log(
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
   )
-  await spawnAndWait(tmpDir, 'demucs-cxfreeze', [ytPath, '-n', DEMUCS_MODEL_NAME, '--repo', PATH_TO_MODELS, '-j', jobCount])
+  const demucsExeArgs = [
+    mediaPath,
+    '-n',
+    DEMUCS_MODEL_NAME,
+    '-j',
+    jobCount,
+  ]
+  if (PATH_TO_MODELS) {
+    demucsExeArgs.push('--repo', PATH_TO_MODELS)
+  }
+  await spawnAndWait(tmpDir, DEMUCS_EXE_NAME, demucsExeArgs)
 
-  const demucsBasePath = path.join(tmpDir, 'separated', DEMUCS_MODEL_NAME, ytFilename)
+  const demucsBasePath = await findDemucsOutputDir(path.join(tmpDir, 'separated', DEMUCS_MODEL_NAME))
   const demucsPaths = {
     bass: path.join(demucsBasePath, 'bass.wav'),
     drums: path.join(demucsBasePath, 'drums.wav'),
@@ -165,7 +217,7 @@ async function _processVideo(video, tmpDir) {
 
   const instrumentalPath = path.join(tmpDir, 'instrumental.wav')
   console.log(`Mixing down instrumental stems to "${instrumentalPath}"`)
-  await spawnAndWait(tmpDir, 'ffmpeg', [
+  await spawnAndWait(tmpDir, FFMPEG_EXE_NAME, [
     '-i',
     demucsPaths.bass,
     '-i',
@@ -215,7 +267,13 @@ async function processVideo(video) {
     await _processVideo(video, tmpDir)
   } catch (err) {
     console.trace(err)
-    setVideoStatusAndPath(video.videoId, 'error', null)
+
+    const status = module.exports.getVideoStatus(video.videoId)
+    if (status === null) {
+      console.log('Task was canceled by user.')
+    } else {
+      setVideoStatusAndPath(video.videoId, 'error', null)
+    }
   } finally {
     try {
       await fs.rm(tmpDir, {
@@ -259,8 +317,27 @@ module.exports.setItems = async (items) => {
 let electronStore = null
 let videosDb = {}
 
-function loadVideosDb() {
-  videosDb = electronStore.get('videosDb') || {}
+async function loadVideosDb() {
+  const loaded = electronStore.get('videosDb') || {}
+  const filtered = {}
+
+  for (const videoId in loaded) {
+    let exists = false
+
+    try {
+      await fs.access(loaded[videoId].path)
+      exists = true
+    } catch (error) {
+      exists = false
+    }
+
+    if (exists) {
+      filtered[videoId] = loaded[videoId]
+    }
+  }
+
+  videosDb = filtered
+  electronStore.set('videosDb', videosDb)
 }
 
 function saveFinishedToVideosDb() {

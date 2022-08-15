@@ -6,12 +6,18 @@
   import RefreshIcon from '$icons/outline/RefreshIcon.svelte'
   import ExclamationCircleIcon from '$icons/outline/ExclamationCircleIcon.svelte'
   import ExternalLinkIcon from '$icons/outline/ExternalLinkIcon.svelte'
+  import XCircleIcon from '$icons/solid/XCircleIcon.svelte'
 
-  export let video = null, onSplitClicked = null
-  let hovered = false
+  export let video = null, onSplitClicked = null, onCancelClicked = null
+  let hovered = false, cancelHovered = false
+
+  function handleCancelClicked(event) {
+    event.stopPropagation()
+    onCancelClicked(video)
+  }
 
   async function handleOpenStemsClicked() {
-    const result = await window.openStemsPath(video.videoId)
+    const result = await window.openStemsPath(video)
     if (result === 'split') {
       onSplitClicked(video, true)
     }
@@ -43,7 +49,7 @@
 </script>
 
 {#if status !== null}
-  <button class="overflow-hidden grow-0 shrink-0 max-w-xs flex flex-row px-4 p-2 space-x-4 items-center rounded-md text-left bg-slate-800 drop-shadow-md" disabled={!onClick} on:click={onClick} on:mouseenter={() => hovered = true} on:mouseleave={() => hovered = false}>
+  <button class="overflow-hidden grow-0 shrink-0 w-60 flex flex-row px-4 p-2 space-x-4 items-center rounded-md text-left bg-slate-800 drop-shadow-md" disabled={!onClick} on:click={onClick} on:mouseenter={() => hovered = true} on:mouseleave={() => hovered = false}>
     {#if status === 'processing'}
       <div class="grow-0 shrink-0 w-5 h-5 text-slate-100 animate-pulse">
         <LoadingSpinnerIcon />
@@ -68,7 +74,13 @@
     <div class="overflow-hidden flex-1 flex flex-col justify-center leading-snug">
       <div class="whitespace-nowrap overflow-hidden text-ellipsis font-semibold">{video.title}</div>
       <div class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-400">
-        {#if status === 'processing'}
+        {#if cancelHovered}
+          {#if status === 'processing'}
+            Cancel
+          {:else}
+            Remove
+          {/if}
+        {:else if status === 'processing'}
           Processing
         {:else if status === 'queued'}
           Queued
@@ -83,5 +95,8 @@
         {/if}
       </div>
     </div>
+    <button class="grow-0 shrink-0 w-5 h-5 text-slate-500 hover:text-slate-400 transition:color" on:click={handleCancelClicked} on:mouseenter={() => cancelHovered = true} on:mouseleave={() => cancelHovered = false}>
+      <XCircleIcon />
+    </button>
   </button>
 {/if}
