@@ -160,7 +160,7 @@ function createWindow() {
   })
 
   if (process.env.STEMROLLER_RUN_FROM_SOURCE) {
-    const port = process.env.PORT || 5173
+    const port = process.env.PORT || 4173
     mainWindow.loadURL(`http://localhost:${port}`)
   } else {
     loadURL(mainWindow)
