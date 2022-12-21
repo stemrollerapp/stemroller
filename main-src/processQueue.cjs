@@ -70,7 +70,7 @@ if (PATH_TO_THIRD_PARTY_APPS) {
   CHILD_PROCESS_ENV.PATH =
     PATH_TO_DEMUCS + (process.platform === 'win32' ? ';' : ':') + PATH_TO_FFMPEG
 }
-const DEMUCS_MODEL_NAME = 'mdx_extra_q'
+const DEMUCS_MODEL_NAME = 'htdemucs_ft'
 const TMP_PREFIX = 'StemRoller-'
 
 function getJobCount() {
@@ -198,19 +198,15 @@ async function _processVideo(video, tmpDir) {
   console.log(
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
   )
-  const demucsExeArgs = [
-    mediaPath,
-    '-n',
-    DEMUCS_MODEL_NAME,
-    '-j',
-    jobCount,
-  ]
+  const demucsExeArgs = [mediaPath, '-n', DEMUCS_MODEL_NAME, '-j', jobCount]
   if (PATH_TO_MODELS) {
     demucsExeArgs.push('--repo', PATH_TO_MODELS)
   }
   await spawnAndWait(tmpDir, DEMUCS_EXE_NAME, demucsExeArgs)
 
-  const demucsBasePath = await findDemucsOutputDir(path.join(tmpDir, 'separated', DEMUCS_MODEL_NAME))
+  const demucsBasePath = await findDemucsOutputDir(
+    path.join(tmpDir, 'separated', DEMUCS_MODEL_NAME)
+  )
   const demucsPaths = {
     bass: path.join(demucsBasePath, 'bass.wav'),
     drums: path.join(demucsBasePath, 'drums.wav'),

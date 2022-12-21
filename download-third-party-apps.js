@@ -23,12 +23,15 @@ function extract7z(archivePath, outPath) {
 let winOrMac = null
 let macSuffix = ''
 let cudaSuffix = ''
+let demucsZipOr7z = null
 if (process.platform === 'win32') {
   winOrMac = 'win'
   cudaSuffix = '-cuda'
+  demucsZipOr7z = '7z'
 } else if (process.platform === 'darwin') {
   winOrMac = 'mac'
   macSuffix = '_sierra'
+  demucsZipOr7z = 'zip'
 }
 
 async function downloadFile(url, filePath) {
@@ -98,12 +101,12 @@ async function main() {
       path.join('anyos-extra-files', 'Models', 'htdemucs_ft.yaml'),
     ],
     [
-      `https://github.com/stemrollerapp/demucs-cxfreeze/releases/download/2.0.0/demucs-cxfreeze-2.0.0-${winOrMac}${macSuffix}${cudaSuffix}.${zipOr7z}`,
+      `https://github.com/stemrollerapp/demucs-cxfreeze/releases/download/2.0.0/demucs-cxfreeze-2.0.0-${winOrMac}${macSuffix}${cudaSuffix}.${demucsZipOr7z}`,
       path.join(
         `${winOrMac}-extra-files`,
         'ThirdPartyApps',
         'demucs-cxfreeze',
-        `demucs-cxfreeze-2.0.0-${winOrMac}${macSuffix}${cudaSuffix}.${zipOr7z}`
+        `demucs-cxfreeze-2.0.0-${winOrMac}${macSuffix}${cudaSuffix}.${demucsZipOr7z}`
       ),
     ],
   ]
