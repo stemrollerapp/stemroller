@@ -60,6 +60,6 @@
 		"tree-kill": "^1.2.2",
 		"xxhash-wasm": "^1.0.1",
 		"yt-search": "^2.10.3",
-		"ytdl-core": "github:GreepTheSheep/node-ytdl-core"
+		"ytdl-core": "^4.11.2"
 	}
 }

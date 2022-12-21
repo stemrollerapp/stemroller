@@ -107,6 +107,14 @@ function spawnAndWait(cwd, command, args) {
       env: CHILD_PROCESS_ENV,
     })
 
+    curChildProcess.stdout.on('data', (data) => {
+      console.log(`child stdout:\n${data}`)
+    })
+
+    curChildProcess.stderr.on('data', (data) => {
+      console.log(`child stderr:\n${data}`)
+    })
+
     curChildProcess.on('error', (error) => {
       reject(error)
       killCurChildProcess()

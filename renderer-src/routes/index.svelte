@@ -50,7 +50,7 @@
         title: filePathToTitle(path),
       })
     } catch (err) {
-      window.alert('There was an error.')
+      window.alert('Unable to process this file. Please ensure that you dropped an audio file, not a folder or other item.')
     }
   }
 
