@@ -28,6 +28,7 @@
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^1.0.0-next.34",
 		"@sveltejs/kit": "^1.0.0-next.357",
+		"7zip-bin": "^5.2.0",
 		"autoprefixer": "^10.4.7",
 		"concurrently": "^7.2.2",
 		"cross-env": "^7.0.3",
@@ -43,6 +44,7 @@
 		"extract-zip": "^2.0.1",
 		"heroicons": "^1.0.6",
 		"lodash.debounce": "^4.0.8",
+		"node-7z": "^3.0.0",
 		"node-fetch": "^3.2.10",
 		"postcss": "^8.4.14",
 		"prettier": "^2.7.1",
