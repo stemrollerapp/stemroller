@@ -1,10 +1,10 @@
-_Wondering when your feature request or issue will be addressed? Please see the [StemRoller Roadmap](https://github.com/orgs/stemrollerapp/projects/1). Also, join our [Discord server](https://www.stemroller.com/chat) so we can communicate with you more directly_.
-
 # StemRoller
 
 StemRoller is the first free app which enables you to separate vocal and instrumental stems from any song with a single click! StemRoller uses Facebook's state-of-the-art [Demucs](https://github.com/facebookresearch/demucs) algorithm for demixing songs and integrates search results from YouTube.
 
 Simply type the name/artist of any song into the search bar and click the **Split** button that appears in the results! You'll need to wait several minutes for splitting to complete. Once stems have been extracted, you'll see an **Open** button next to the song - click that to access your stems!
+
+_We also have a [Discord server](https://www.stemroller.com/chat) with update announcements and support_.
 
 ## Quick Start
 
@@ -22,7 +22,7 @@ npm i -D
 
 `npm run download-third-party-apps`
 
-### Linux (Experimental)
+### Linux (Not officially supported)
 
 Install `ffmpeg` globally using your preferred package manager, and install `demucs` globally with `pip`.
 
@@ -30,9 +30,7 @@ Install `ffmpeg` globally using your preferred package manager, and install `dem
 
 `npm run dev`
 
-## Run in Production Mode (Linux)
-
-Linux is not yet officially supported, but thanks to some kind contributors, we now have experimental Linux support if you're willing to run StemRoller from source. You can, of course, also run in development mode on Linux.
+## Run in Production Mode
 
 `npm run build:svelte && npm run start`
 
