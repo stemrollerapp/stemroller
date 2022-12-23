@@ -48,7 +48,6 @@ function getPathToModels() {
   }
 }
 
-const OUTPUT_DIR = path.join(os.homedir(), 'Music', 'StemRoller')
 const PATH_TO_THIRD_PARTY_APPS = getPathToThirdPartyApps()
 const PATH_TO_MODELS = getPathToModels()
 const PATH_TO_DEMUCS = PATH_TO_THIRD_PARTY_APPS
@@ -177,8 +176,8 @@ async function ensureDemucsPathsExist(paths) {
 
 async function _processVideo(video, tmpDir) {
   const beginTime = Date.now()
-  console.log(`BEGIN processing video "${video.videoId}" - "${video.title}"`)
-  setVideoStatusAndPath(video.videoId, 'processing', null)
+  console.log(`BEGIN downloading/processing video "${video.videoId}" - "${video.title}"`)
+  setVideoStatusAndPath(video.videoId, 'downloading', null)
 
   let mediaPath = null
 
@@ -194,11 +193,16 @@ async function _processVideo(video, tmpDir) {
     throw new Error(`Invalid mediaSource: ${video.mediaSource}`)
   }
 
+  setVideoStatusAndPath(video.videoId, 'processing', null)
   const jobCount = getJobCount()
   console.log(
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
   )
   const demucsExeArgs = [mediaPath, '-n', DEMUCS_MODEL_NAME, '-j', jobCount]
+  if (module.exports.getPyTorchBackend() === 'cpu') {
+    console.log('Running with "-d cpu" to force CPU instead of CUDA')
+    demucsExeArgs.push('-d', 'cpu')
+  }
   if (PATH_TO_MODELS) {
     demucsExeArgs.push('--repo', PATH_TO_MODELS)
   }
@@ -240,7 +244,7 @@ async function _processVideo(video, tmpDir) {
   }
 
   const outputFolderName = sanitizeFilename(`${video.title}-${video.videoId}`)
-  const outputBasePath = path.join(OUTPUT_DIR, outputFolderName)
+  const outputBasePath = path.join(module.exports.getOutputPath(), outputFolderName)
   await fs.mkdir(outputBasePath, { recursive: true })
   console.log(`Copying all stems to "${outputBasePath}"`)
   const outputPaths = {
@@ -380,6 +384,34 @@ module.exports.setElectronStore = (store) => {
   loadVideosDb()
 }
 
+module.exports.getOutputPath = () => {
+  if (electronStore) {
+    const outputPath = electronStore.get('outputPath')
+    if (outputPath) {
+      return outputPath
+    }
+  }
+  return path.join(os.homedir(), 'Music', 'StemRoller')
+}
+
+module.exports.setOutputPath = (outputPath) => {
+  electronStore.set('outputPath', outputPath)
+}
+
+module.exports.getPyTorchBackend = () => {
+  if (electronStore) {
+    const backend = electronStore.get('pyTorchBackend')
+    if (backend) {
+      return backend
+    }
+  }
+  return 'auto'
+}
+
+module.exports.setPyTorchBackend = (backend) => {
+  electronStore.set('pyTorchBackend', backend)
+}
+
 module.exports.getVideoStatus = (videoId) => {
   if (videoId in videosDb) {
     return videosDb[videoId].status
@@ -415,8 +447,10 @@ module.exports.deleteVideoStatusAndPath = (videoId) => {
 
 module.exports.isBusy = () => {
   return (
-    curItems.filter((video) => module.exports.getVideoStatus(video.videoId) === 'processing')
-      .length > 0
+    curItems.filter((video) => {
+      const status = module.exports.getVideoStatus(video.videoId)
+      return status === 'processing' || status === 'downloading'
+    }).length > 0
   )
 }
 

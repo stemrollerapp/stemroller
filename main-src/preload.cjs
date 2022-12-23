@@ -21,17 +21,17 @@ contextBridge.exposeInMainWorld('deleteVideoStatusAndPath', (videoId) =>
 contextBridge.exposeInMainWorld('openStemsPath', (videoId) =>
   ipcRenderer.invoke('openStemsPath', videoId)
 )
-contextBridge.exposeInMainWorld('openDonate', () =>
-  ipcRenderer.invoke('openDonate')
-)
-contextBridge.exposeInMainWorld('openSource', () =>
-  ipcRenderer.invoke('openSource')
-)
-contextBridge.exposeInMainWorld('openChat', () =>
-  ipcRenderer.invoke('openChat')
-)
+contextBridge.exposeInMainWorld('openDonate', () => ipcRenderer.invoke('openDonate'))
+contextBridge.exposeInMainWorld('openSource', () => ipcRenderer.invoke('openSource'))
+contextBridge.exposeInMainWorld('openChat', () => ipcRenderer.invoke('openChat'))
 contextBridge.exposeInMainWorld('disableDonatePopup', () =>
   ipcRenderer.invoke('disableDonatePopup')
+)
+contextBridge.exposeInMainWorld('getOutputPath', () => ipcRenderer.invoke('getOutputPath'))
+contextBridge.exposeInMainWorld('browseOutputPath', () => ipcRenderer.invoke('browseOutputPath'))
+contextBridge.exposeInMainWorld('getPyTorchBackend', () => ipcRenderer.invoke('getPyTorchBackend'))
+contextBridge.exposeInMainWorld('setPyTorchBackend', (backend) =>
+  ipcRenderer.invoke('setPyTorchBackend', backend)
 )
 
 let handlers = new Map()

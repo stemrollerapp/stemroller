@@ -44,6 +44,8 @@
     </div>
     {#if status === 'processing'}
       <Button Icon={LoadingSpinnerIcon} text="Processing" disabled={true} />
+    {#if status === 'downloading'}
+      <Button Icon={LoadingSpinnerIcon} text="Downloading" disabled={true} />
     {:else if status === 'queued'}
       <Button Icon={CollectionIcon} text="Queued" disabled={true} />
     {:else if status === 'error'}

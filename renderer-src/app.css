@@ -5,13 +5,13 @@
 @font-face {
   font-family: 'Mukta';
   font-weight: 400;
-  src: url('/static/fonts/Mukta/Mukta-Regular.ttf') format('truetype');
+  src: url('/fonts/Mukta/Mukta-Regular.ttf') format('truetype');
 }
 
 @font-face {
   font-family: 'Mukta';
   font-weight: 700;
-  src: url('/static/fonts/Mukta/Mukta-Bold.ttf') format('truetype');
+  src: url('/fonts/Mukta/Mukta-Bold.ttf') format('truetype');
 }
 
 ::-webkit-scrollbar {
@@ -59,12 +59,12 @@ body {
 
 @keyframes bottom-bar-button-flash-keyframes {
   from {
-    background-color: #06B6D4;
-    color: #0F172A;
+    background-color: #06b6d4;
+    color: #0f172a;
   }
 
   to {
-    background-color: #67E8F9;
-    color: #0F172A;
+    background-color: #67e8f9;
+    color: #0f172a;
   }
 }

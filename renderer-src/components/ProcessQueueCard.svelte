@@ -50,7 +50,7 @@
 
 {#if status !== null}
   <button class="overflow-hidden grow-0 shrink-0 w-60 flex flex-row px-4 p-2 space-x-4 items-center rounded-md text-left bg-slate-800 drop-shadow-md" disabled={!onClick} on:click={onClick} on:mouseenter={() => hovered = true} on:mouseleave={() => hovered = false}>
-    {#if status === 'processing'}
+    {#if status === 'processing' || status === 'downloading'}
       <div class="grow-0 shrink-0 w-5 h-5 text-slate-100 animate-pulse">
         <LoadingSpinnerIcon />
       </div>
@@ -75,13 +75,15 @@
       <div class="whitespace-nowrap overflow-hidden text-ellipsis font-semibold">{video.title}</div>
       <div class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-400">
         {#if cancelHovered}
-          {#if status === 'processing'}
+          {#if status === 'processing' || status === 'downloading'}
             Cancel
           {:else}
             Remove
           {/if}
         {:else if status === 'processing'}
           Processing
+        {:else if status === 'downloading'}
+          Downloading
         {:else if status === 'queued'}
           Queued
         {:else if status === 'error'}
