@@ -6,14 +6,32 @@ import path from 'path'
 import { pipeline } from 'stream/promises'
 import fetch from 'node-fetch'
 import extractZip from 'extract-zip'
+import sevenBin from '7zip-bin'
+import node7z from 'node-7z'
+
+function extract7z(archivePath, outPath) {
+  return new Promise((resolve, reject) => {
+    const pathTo7zip = sevenBin.path7za
+    const seven = node7z.extractFull(archivePath, outPath, {
+      $bin: pathTo7zip,
+    })
+    seven.on('end', resolve)
+    seven.on('error', reject)
+  })
+}
 
 let winOrMac = null
 let macSuffix = ''
+let cudaSuffix = ''
+let demucsZipOr7z = null
 if (process.platform === 'win32') {
   winOrMac = 'win'
+  cudaSuffix = '-cuda'
+  demucsZipOr7z = '7z'
 } else if (process.platform === 'darwin') {
   winOrMac = 'mac'
   macSuffix = '_sierra'
+  demucsZipOr7z = 'zip'
 }
 
 async function downloadFile(url, filePath) {
@@ -63,32 +81,32 @@ async function moveDirChildrenUpAndDeleteDir(dirName) {
 async function main() {
   const downloads = [
     [
-      'https://dl.fbaipublicfiles.com/demucs/mdx_final/83fc094f-4a16d450.th',
-      path.join('anyos-extra-files', 'Models', '83fc094f-4a16d450.th'),
+      'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th',
+      path.join('anyos-extra-files', 'Models', 'f7e0c4bc-ba3fe64a.th'),
     ],
     [
-      'https://dl.fbaipublicfiles.com/demucs/mdx_final/7fd6ef75-a905dd85.th',
-      path.join('anyos-extra-files', 'Models', '7fd6ef75-a905dd85.th'),
+      'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/d12395a8-e57c48e6.th',
+      path.join('anyos-extra-files', 'Models', 'd12395a8-e57c48e6.th'),
     ],
     [
-      'https://dl.fbaipublicfiles.com/demucs/mdx_final/14fc6a69-a89dd0ee.th',
-      path.join('anyos-extra-files', 'Models', '14fc6a69-a89dd0ee.th'),
+      'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/92cfc3b6-ef3bcb9c.th',
+      path.join('anyos-extra-files', 'Models', '92cfc3b6-ef3bcb9c.th'),
     ],
     [
-      'https://dl.fbaipublicfiles.com/demucs/mdx_final/464b36d7-e5a9386e.th',
-      path.join('anyos-extra-files', 'Models', '464b36d7-e5a9386e.th'),
+      'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/04573f0d-f3cf25b2.th',
+      path.join('anyos-extra-files', 'Models', '04573f0d-f3cf25b2.th'),
     ],
     [
-      'https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/remote/mdx_extra_q.yaml',
-      path.join('anyos-extra-files', 'Models', 'mdx_extra_q.yaml'),
+      'https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/remote/htdemucs_ft.yaml',
+      path.join('anyos-extra-files', 'Models', 'htdemucs_ft.yaml'),
     ],
     [
-      `https://github.com/stemrollerapp/demucs-cxfreeze/releases/download/1.0.0/demucs-cxfreeze-1.0.0-${winOrMac}${macSuffix}.zip`,
+      `https://github.com/stemrollerapp/demucs-cxfreeze/releases/download/2.0.0/demucs-cxfreeze-2.0.0-${winOrMac}${macSuffix}${cudaSuffix}.${demucsZipOr7z}`,
       path.join(
         `${winOrMac}-extra-files`,
         'ThirdPartyApps',
         'demucs-cxfreeze',
-        `demucs-cxfreeze-1.0.0-${winOrMac}${macSuffix}.zip`
+        `demucs-cxfreeze-2.0.0-${winOrMac}${macSuffix}${cudaSuffix}.${demucsZipOr7z}`
       ),
     ],
   ]
@@ -125,10 +143,16 @@ async function main() {
   }
 
   for (const download of downloads) {
-    if (path.extname(download[1]) === '.zip') {
+    const ext = path.extname(download[1])
+    if (ext === '.zip' || ext === '.7z') {
       console.log(`Extracting: "${download[1]}"`)
       const dirName = path.dirname(download[1])
-      await extractZip(download[1], { dir: path.resolve(dirName) })
+      const outDir = path.resolve(dirName)
+      if (ext === '.zip') {
+        await extractZip(download[1], { dir: outDir })
+      } else {
+        await extract7z(download[1], outDir)
+      }
       console.log(`Extraction successful! Extracted "${download[1]}" to "${dirName}"`)
       console.log(`Deleting: "${download[1]}"`)
       await fsPromises.rm(download[1], {
@@ -144,7 +168,7 @@ async function main() {
       `${winOrMac}-extra-files`,
       'ThirdPartyApps',
       'demucs-cxfreeze',
-      `demucs-cxfreeze-1.0.0-${winOrMac}${macSuffix}`
+      `demucs-cxfreeze-2.0.0-${winOrMac}${macSuffix}${cudaSuffix}`
     )
   )
 
@@ -154,7 +178,7 @@ async function main() {
         `${winOrMac}-extra-files`,
         'ThirdPartyApps',
         'ffmpeg',
-        'ffmpeg-5.1-essentials_build'
+        'ffmpeg-5.1.2-essentials_build'
       )
     )
   } else if (process.platform === 'darwin') {

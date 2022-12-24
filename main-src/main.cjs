@@ -31,6 +31,16 @@ async function handleYouTubeSearch(event, query) {
 }
 
 async function handleSetProcessQueueItems(event, items) {
+  if (!electronStore.get('warnedProcessingLongTime') && items.length > 0) {
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Processing may take a while',
+      message:
+        'On some computers, processing songs may take a long time. The app probably has not crashed unless it displays a "Failed" status for any of the songs you have chosen to split. If you\'ve waited longer than an hour and StemRoller still appears stuck, feel free to reach out and report the issue via Discord.',
+    })
+    electronStore.set('warnedProcessingLongTime', true)
+  }
+
   await processQueue.setItems(items)
 }
 
@@ -80,7 +90,8 @@ async function handleOpenStemsPath(event, video) {
       dialog.showMessageBoxSync(mainWindow, {
         type: 'warning',
         title: 'Folder Not Found',
-        message: "The folder containing this song's stems has been moved or deleted. If you would like to split this song again, simply select the original local file or drag-and-drop it onto the StemRoller window."
+        message:
+          "The folder containing this song's stems has been moved or deleted. If you would like to split this song again, simply select the original local file or drag-and-drop it onto the StemRoller window.",
       })
 
       return 'not-found'
@@ -111,6 +122,30 @@ async function handleDisableDonatePopup() {
   mainWindow.webContents.send('donateUpdate', {
     showDonatePopup: false,
   })
+}
+
+async function handleGetOutputPath() {
+  return processQueue.getOutputPath()
+}
+
+async function handleBrowseOutputPath() {
+  const response = await dialog.showOpenDialog(mainWindow, {
+    title: 'Select folder to store output stems',
+    properties: ['openDirectory'],
+  })
+  if (response.filePaths.length === 1) {
+    processQueue.setOutputPath(response.filePaths[0])
+    return processQueue.getOutputPath()
+  }
+  return null
+}
+
+async function handleGetPyTorchBackend() {
+  return processQueue.getPyTorchBackend()
+}
+
+async function handleSetPyTorchBackend(event, backend) {
+  return processQueue.setPyTorchBackend(backend)
 }
 
 let mainWindow = null
@@ -169,7 +204,9 @@ function createWindow() {
 
 async function checkForUpdates() {
   try {
-    const remotePackageReq = await fetch('https://raw.githubusercontent.com/stemrollerapp/stemroller/main/package.json')
+    const remotePackageReq = await fetch(
+      'https://raw.githubusercontent.com/stemrollerapp/stemroller/main/package.json'
+    )
     const remotePackageJson = await remotePackageReq.json()
 
     const versionDifference = compareVersions(remotePackageJson.version, app.getVersion())
@@ -179,7 +216,9 @@ async function checkForUpdates() {
         type: 'info',
         buttons: ['Yes', 'No'],
         title: 'Update available!',
-        message: `An update is available! Would you like to visit the StemRoller website and download it now?\n\nYou are using: ${app.getVersion()}\nUpdated version: ${remotePackageJson.version}.`,
+        message: `An update is available! Would you like to visit the StemRoller website and download it now?\n\nYou are using: ${app.getVersion()}\nUpdated version: ${
+          remotePackageJson.version
+        }.`,
       })
 
       if (response === 0) {
@@ -228,6 +267,10 @@ function main() {
     ipcMain.handle('openSource', handleOpenSource)
     ipcMain.handle('openChat', handleOpenChat)
     ipcMain.handle('disableDonatePopup', handleDisableDonatePopup)
+    ipcMain.handle('getOutputPath', handleGetOutputPath)
+    ipcMain.handle('browseOutputPath', handleBrowseOutputPath)
+    ipcMain.handle('getPyTorchBackend', handleGetPyTorchBackend)
+    ipcMain.handle('setPyTorchBackend', handleSetPyTorchBackend)
   })
 
   app.on('window-all-closed', async () => {

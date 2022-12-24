@@ -1,6 +1,6 @@
 {
 	"name": "stemroller",
-	"version": "1.1.1",
+	"version": "2.0.0",
 	"private": true,
 	"type": "module",
 	"description": "Isolate vocals, drums, bass, and other instrumental stems from any song",
@@ -28,6 +28,7 @@
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^1.0.0-next.34",
 		"@sveltejs/kit": "^1.0.0-next.357",
+		"7zip-bin": "^5.2.0",
 		"autoprefixer": "^10.4.7",
 		"concurrently": "^7.2.2",
 		"cross-env": "^7.0.3",
@@ -43,6 +44,7 @@
 		"extract-zip": "^2.0.1",
 		"heroicons": "^1.0.6",
 		"lodash.debounce": "^4.0.8",
+		"node-7z": "^3.0.0",
 		"node-fetch": "^3.2.10",
 		"postcss": "^8.4.14",
 		"prettier": "^2.7.1",
@@ -60,6 +62,6 @@
 		"tree-kill": "^1.2.2",
 		"xxhash-wasm": "^1.0.1",
 		"yt-search": "^2.10.3",
-		"ytdl-core": "github:GreepTheSheep/node-ytdl-core"
+		"ytdl-core": "^4.11.2"
 	}
 }

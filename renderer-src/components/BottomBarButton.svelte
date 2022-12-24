@@ -1,11 +1,13 @@
 <script>
-  export let Icon = null, text = null, disabled = false, flashing = false, onClick = null
+  export let Icon = null, text = null, disabled = false, highlighted = false, flashing = false, onClick = null
 
   let styles = null
   $: {
     styles = 'whitespace-nowrap flex items-center justify-center px-2 py-1 outline-none focus:outline-none '
 
-    if (flashing) {
+    if (highlighted) {
+      styles += 'bg-slate-600 '
+    } else if (flashing) {
       styles += 'bottom-bar-button-flash '
     } else {
       styles += 'text-slate-300 bg-slate-900 '
