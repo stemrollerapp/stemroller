@@ -7,6 +7,7 @@ const childProcess = require('child_process')
 const treeKill = require('tree-kill')
 const ytdl = require('ytdl-core')
 const sanitizeFilename = require('sanitize-filename')
+const { powerSaveBlocker } = require('electron')
 
 let statusUpdateCallback = null,
   donateUpdateCallback = null
@@ -270,6 +271,16 @@ async function _processVideo(video, tmpDir) {
 }
 
 async function processVideo(video) {
+  let powerSaveBlockId = null
+
+  try {
+    powerSaveBlockId = powerSaveBlocker.start('prevent-app-suspension')
+    console.log('Successfully blocked power-save using policy: "prevent-app-suspension"')
+  } catch (err) {
+    powerSaveBlockId = null
+    console.trace(err)
+  }
+
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), TMP_PREFIX))
   try {
     await _processVideo(video, tmpDir)
@@ -295,6 +306,17 @@ async function processVideo(video) {
 
     // Will filter out the current (completed) video
     module.exports.setItems(curItems)
+
+    if (powerSaveBlockId !== null) {
+      try {
+        powerSaveBlocker.stop(powerSaveBlockId)
+        console.log('Successfully unblocked power-save')
+      } catch (err) {
+        console.error('Failed to unblock power-save')
+        console.trace(err)
+      }
+      powerSaveBlockId = null
+    }
   }
 }
 
@@ -316,7 +338,7 @@ module.exports.setItems = async (items) => {
   if (interrupt) {
     killCurChildProcess()
     if (curItems.length > 0) {
-      // Avoid recursion when processVideo calls this functions
+      // Avoid recursion when processVideo calls this function
       setTimeout(() => processVideo(curItems[0]), 0)
     }
   }

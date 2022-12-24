@@ -31,6 +31,16 @@ async function handleYouTubeSearch(event, query) {
 }
 
 async function handleSetProcessQueueItems(event, items) {
+  if (!electronStore.get('warnedProcessingLongTime') && items.length > 0) {
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Processing may take a while',
+      message:
+        'On some computers, processing songs may take a long time. The app probably has not crashed unless it displays a "Failed" status for any of the songs you have chosen to split. If you\'ve waited longer than an hour and StemRoller still appears stuck, feel free to reach out and report the issue via Discord.',
+    })
+    electronStore.set('warnedProcessingLongTime', true)
+  }
+
   await processQueue.setItems(items)
 }
 
