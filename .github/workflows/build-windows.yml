@@ -24,7 +24,8 @@ jobs:
       - run: Invoke-WebRequest -Uri https://www.7-zip.org/a/7zr.exe -OutFile 7zr.exe
       - run: Invoke-WebRequest -Uri https://www.7-zip.org/a/7z2201-x64.exe -OutFile 7zInstaller-x64.exe
       - run: .\7zr.exe x "7zInstaller-x64.exe"
-      - run: .\7z.exe a -m0=lzma2 -mmt=on -mx=9 -sfx"7z.sfx" "stemroller-${{ steps.package-version.outputs.version }}-win-cuda.exe" "dist\stemroller-${{ steps.package-version.outputs.version }}-win-cuda"
+      - run: move "dist\stemroller-${{ steps.package-version.outputs.version }}-win-cuda" "stemroller-${{ steps.package-version.outputs.version }}-win-cuda"
+      - run: .\7z.exe a -m0=lzma2 -mmt=on -mx=9 -sfx"7z.sfx" "stemroller-${{ steps.package-version.outputs.version }}-win-cuda.exe" "stemroller-${{ steps.package-version.outputs.version }}-win-cuda"
       - uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.package-version.outputs.version }}
