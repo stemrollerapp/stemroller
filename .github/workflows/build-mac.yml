@@ -1,5 +1,6 @@
 name: build-mac
 on:
+  workflow_dispatch
   push:
     branches: [main]
 
