@@ -5,7 +5,7 @@ const { pipeline } = require('stream/promises')
 const path = require('path')
 const childProcess = require('child_process')
 const treeKill = require('tree-kill')
-const ytdl = require('ytdl-core')
+const ytdl = require('@distube/ytdl-core')
 const sanitizeFilename = require('sanitize-filename')
 const { powerSaveBlocker } = require('electron')
 
