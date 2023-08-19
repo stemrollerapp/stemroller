@@ -140,6 +140,14 @@ async function handleBrowseOutputPath() {
   return null
 }
 
+async function handleGetOutputFormat() {
+  return processQueue.getOutputFormat()
+}
+
+async function handleSetOutputFormat(event, outputFormat) {
+  return processQueue.setOutputFormat(outputFormat)
+}
+
 async function handleGetPyTorchBackend() {
   return processQueue.getPyTorchBackend()
 }
@@ -269,6 +277,8 @@ function main() {
     ipcMain.handle('disableDonatePopup', handleDisableDonatePopup)
     ipcMain.handle('getOutputPath', handleGetOutputPath)
     ipcMain.handle('browseOutputPath', handleBrowseOutputPath)
+    ipcMain.handle('getOutputFormat', handleGetOutputFormat)
+    ipcMain.handle('setOutputFormat', handleSetOutputFormat)
     ipcMain.handle('getPyTorchBackend', handleGetPyTorchBackend)
     ipcMain.handle('setPyTorchBackend', handleSetPyTorchBackend)
   })
