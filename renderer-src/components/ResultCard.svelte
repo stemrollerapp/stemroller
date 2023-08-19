@@ -1,5 +1,6 @@
 <script>
   import { onDestroy } from 'svelte'
+  import { writable } from 'svelte/store'
   import Button from '$components/Button.svelte'
   import AdjustmentsIcon from '$icons/solid/AdjustmentsIcon.svelte'
   import CollectionIcon from '$icons/solid/CollectionIcon.svelte'
@@ -27,8 +28,22 @@
       path = message.path
     })
   }
+
+  // Set up listener for progress updates
+  let progress = writable(0)
+  let quantity = writable(0)
+  let newQuantity = 0
+  const cleanupProgress = window.electron.onUpdateProgress((newProgress) => {
+      progress.set(newProgress)
+      if (newProgress === 0) {
+        newQuantity++
+        quantity.set(newQuantity)
+      }
+  })
+
   onDestroy(() => {
     window.setVideoStatusUpdateHandler(video.videoId, 'ResultCard', null)
+    cleanupProgress()
   })
 </script>
 
@@ -43,7 +58,7 @@
       <div class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-400">{video.author.name}</div>
     </div>
     {#if status === 'processing'}
-      <Button Icon={LoadingSpinnerIcon} text="Processing" disabled={true} />
+      <Button Icon={LoadingSpinnerIcon} text="Processing {$quantity}/4 {$progress}%" disabled={true} />
     {:else if status === 'downloading'}
       <Button Icon={LoadingSpinnerIcon} text="Downloading" disabled={true} />
     {:else if status === 'queued'}

@@ -1,5 +1,17 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
+contextBridge.exposeInMainWorld('electron', {
+  onUpdateProgress: (callback) => {
+    ipcRenderer.on('progress-update', (event, progress) => {
+        callback(progress)
+    })
+
+    return () => {
+        ipcRenderer.removeAllListeners('progress-update')
+    }
+  }
+})
+
 contextBridge.exposeInMainWorld('computeLocalFileHash', (path) =>
   ipcRenderer.invoke('computeLocalFileHash', path)
 )
@@ -54,6 +66,7 @@ contextBridge.exposeInMainWorld(
     }
   }
 )
+
 ipcRenderer.on('videoStatusUpdate', (event, message) => {
   if (handlers.has('__global')) {
     for (const handler of handlers.get('__global').values()) {

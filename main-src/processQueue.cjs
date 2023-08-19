@@ -7,7 +7,7 @@ const childProcess = require('child_process')
 const treeKill = require('tree-kill')
 const ytdl = require('@distube/ytdl-core')
 const sanitizeFilename = require('sanitize-filename')
-const { powerSaveBlocker } = require('electron')
+const { BrowserWindow, powerSaveBlocker } = require('electron')
 
 let statusUpdateCallback = null,
   donateUpdateCallback = null
@@ -98,6 +98,19 @@ function killCurChildProcess() {
   }
 }
 
+function updateProgress(data) {
+  // Check if the output contains the progress update
+  const progressMatch = data.toString().match(/\r\s+\d+%|/)
+  if (progressMatch) {
+    const progress = parseInt(progressMatch)
+    // Find the renderer window and send the update
+    let mainWindow = BrowserWindow.getAllWindows()[0]
+    if (!isNaN(progress) && mainWindow) {
+      mainWindow.webContents.send('progress-update', progress)
+    }
+  }
+}
+
 function spawnAndWait(cwd, command, args) {
   return new Promise((resolve, reject) => {
     killCurChildProcess()
@@ -112,6 +125,8 @@ function spawnAndWait(cwd, command, args) {
     })
 
     curChildProcess.stderr.on('data', (data) => {
+      // For some reason the progress displays in stderr instead of stdout
+      updateProgress(data)
       console.log(`child stderr:\n${data}`)
     })
 
