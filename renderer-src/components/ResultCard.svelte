@@ -8,6 +8,7 @@
   import LoadingSpinnerIcon from '$icons/animated/LoadingSpinnerIcon.svelte'
 
   export let video = null, onSplitClicked = null
+  export let progress = null, quantity = null
 
   async function handleOpenStemsClicked() {
     const result = await window.openStemsPath(video)
@@ -27,6 +28,7 @@
       path = message.path
     })
   }
+
   onDestroy(() => {
     window.setVideoStatusUpdateHandler(video.videoId, 'ResultCard', null)
   })
@@ -43,7 +45,7 @@
       <div class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-400">{video.author.name}</div>
     </div>
     {#if status === 'processing'}
-      <Button Icon={LoadingSpinnerIcon} text="Processing" disabled={true} />
+      <Button Icon={LoadingSpinnerIcon} text="Processing {quantity}/4 {progress}%" disabled={true} />
     {:else if status === 'downloading'}
       <Button Icon={LoadingSpinnerIcon} text="Downloading" disabled={true} />
     {:else if status === 'queued'}
