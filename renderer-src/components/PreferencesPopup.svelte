@@ -9,6 +9,7 @@
 
   let pyTorchBackend = null
   let outputPath = null
+  let outputFormat = null
 
   async function handleBrowseStems() {
     const newOutputPath = await window.browseOutputPath()
@@ -20,11 +21,15 @@
   onMount(async () => {
     pyTorchBackend = await window.getPyTorchBackend()
     outputPath = await window.getOutputPath()
+    outputFormat = await window.getOutputFormat()
   })
 
   $: {
     if (pyTorchBackend) {
       window.setPyTorchBackend(pyTorchBackend)
+    }
+    if (outputFormat) {
+      window.setOutputFormat(outputFormat)
     }
   }
 </script>
@@ -51,6 +56,13 @@
     <div class="flex-1 w-full min-w-0 border-solid border border-slate-700 bg-slate-900 text-slate-300 px-2 py-2 rounded-md truncate">{outputPath || ''}</div>
     <Button Icon={FolderOpenIcon} text="Browse" onClick={handleBrowseStems} />
   </div>
+
+  <div class="text-lg font-bold mb-1">Stems output format</div>
+
+  <select class="border-solid border border-slate-700 bg-slate-900 text-slate-300 focus:outline-none focus:ring focus:ring-cyan-300 px-2 py-1 rounded-md" bind:value={outputFormat}>
+    <option value="wav" class="bg-slate-900 text-slate-300 px-2 py-1">WAV</option>
+    <option value="mp3" class="bg-slate-900 text-slate-300 px-2 py-1">MP3</option>
+  </select>
 
   <div class="text-lg font-bold mb-1">Backend</div>
 
