@@ -1,5 +1,5 @@
 <script>
-  import { onDestroy, onMount } from 'svelte'
+  import { onDestroy } from 'svelte'
   import Button from '$components/Button.svelte'
   import LoadingSpinnerIcon from '$icons/animated/LoadingSpinnerIcon.svelte'
   import CollectionIcon from '$icons/outline/CollectionIcon.svelte'

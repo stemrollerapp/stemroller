@@ -84,7 +84,7 @@
       {#each videos as video}
         <ResultCard {video} {onSplitClicked} />
       {/each}
-    {:else if status !==null && status.step === 'error'}
+    {:else if status !== null && status.step === 'error'}
       <p class="m-4 text-slate-400 text-center">An error occurred. Please make sure you&apos;re connected to the internet and try again.</p>
     {:else if !hasQuery}
       <div class="w-6 h-6 self-center animate-bounce text-slate-500 pointer-events-none">
