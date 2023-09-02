@@ -14,6 +14,7 @@ let statusUpdateCallback = null,
 let curItems = [],
   curChildProcess = null,
   curYtdlAbortController = null
+let quantity = 0
 
 function getPathToThirdPartyApps() {
   if (process.env.NODE_ENV === 'dev') {
@@ -103,12 +104,15 @@ function updateProgress(videoId, data) {
   const progressMatch = data.toString().match(/\r\s+\d+%|/)
   if (progressMatch) {
     const progress = parseInt(progressMatch)
+    if (progress === 0) {
+          quantity++
+        }
     // Find the renderer window and send the update
     let mainWindow = BrowserWindow.getAllWindows()[0]
     if (!isNaN(progress) && mainWindow) {
       mainWindow.webContents.send('videoStatusUpdate', {
         videoId,
-        status: { step: 'processing', progress: progress },
+        status: { step: 'processing', progress, quantity },
       })
     }
   }
@@ -212,7 +216,7 @@ async function _processVideo(video, tmpDir) {
     throw new Error(`Invalid mediaSource: ${video.mediaSource}`)
   }
 
-  setVideoStatusAndPath(video.videoId, { step: 'processing', progress: 0 }, null)
+  setVideoStatusAndPath(video.videoId, { step: 'processing', progress: 0, quantity: 0 }, null)
   const jobCount = getJobCount()
   console.log(
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
@@ -345,7 +349,7 @@ module.exports.setItems = async (items) => {
       status = { step: 'queued' }
       setVideoStatusAndPath(video.videoId, status, null)
     }
-    return status !== 'done' && status !== 'error'
+    return status.step !== 'done' && status.step !== 'error'
   })
 
   const oldVideoId = curItems.length > 0 ? curItems[0].videoId : null
@@ -392,7 +396,7 @@ function saveFinishedToVideosDb() {
   let numFinished = 0
   const filtered = {}
   for (const videoId in videosDb) {
-    if (videosDb[videoId].status === 'done') {
+    if (videosDb[videoId].status.step === 'done') {
       filtered[videoId] = videosDb[videoId]
       ++numFinished
     }
@@ -489,7 +493,7 @@ module.exports.isBusy = () => {
   return (
     curItems.filter((video) => {
       const status = module.exports.getVideoStatus(video.videoId)
-      return status === 'processing' || status === 'downloading'
+      return status.step === 'processing' || status.step === 'downloading'
     }).length > 0
   )
 }

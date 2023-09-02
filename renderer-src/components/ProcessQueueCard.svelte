@@ -83,7 +83,7 @@
             Remove
           {/if}
         {:else if status.step === 'processing'}
-          Processing {status.progress}%
+          Processing {status.quantity}/4 {status.progress}%
         {:else if status.step === 'downloading'}
           Downloading
         {:else if status.step === 'queued'}

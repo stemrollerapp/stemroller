@@ -44,7 +44,7 @@
     </div>
     {#if status !== null}
       {#if status.step === 'processing'}
-        <Button Icon={LoadingSpinnerIcon} text="Processing {status.progress}%" disabled={true} />
+        <Button Icon={LoadingSpinnerIcon} text="Processing {status.quantity}/4 {status.progress}%" disabled={true} />
       {:else if status.step === 'downloading'}
         <Button Icon={LoadingSpinnerIcon} text="Downloading" disabled={true} />
       {:else if status.step === 'queued'}
