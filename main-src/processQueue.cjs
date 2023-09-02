@@ -105,8 +105,8 @@ function updateProgress(videoId, data) {
   if (progressMatch) {
     const progress = parseInt(progressMatch)
     if (progress === 0) {
-          quantity++
-        }
+      quantity++
+    }
     // Find the renderer window and send the update
     let mainWindow = BrowserWindow.getAllWindows()[0]
     if (!isNaN(progress) && mainWindow) {

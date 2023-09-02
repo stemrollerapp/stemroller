@@ -19,7 +19,7 @@
   async function handleCancelClicked(video) {
     processQueueItems = processQueueItems.filter(item => item.videoId !== video.videoId)
     const status = await window.getVideoStatus(video.videoId)
-    if (status !== 'done') {
+    if (status.step !== 'done') {
       await window.deleteVideoStatusAndPath(video.videoId)
     }
   }
