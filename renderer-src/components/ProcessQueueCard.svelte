@@ -35,10 +35,12 @@
     })
   }
   $: {
-    if (status === 'done') {
-      onClick = handleOpenStemsClicked
-    } else if (status === 'error') {
-      onClick = () => onSplitClicked(video, true)
+    if (status !== null) {
+      if (status.step === 'done') {
+        onClick = handleOpenStemsClicked
+      } else if (status.step === 'error') {
+        onClick = () => onSplitClicked(video, true)
+      }
     } else {
       onClick = undefined
     }
@@ -50,15 +52,15 @@
 
 {#if status !== null}
   <button class="overflow-hidden grow-0 shrink-0 w-60 flex flex-row px-4 p-2 space-x-4 items-center rounded-md text-left bg-slate-800 drop-shadow-md" disabled={!onClick} on:click={onClick} on:mouseenter={() => hovered = true} on:mouseleave={() => hovered = false}>
-    {#if status === 'processing' || status === 'downloading'}
+    {#if status.step === 'processing' || status.step === 'downloading'}
       <div class="grow-0 shrink-0 w-5 h-5 text-slate-100 animate-pulse">
         <LoadingSpinnerIcon />
       </div>
-    {:else if status === 'queued'}
+    {:else if status.step === 'queued'}
       <div class="grow-0 shrink-0 w-6 h-6 text-slate-500">
         <CollectionIcon />
       </div>
-    {:else if status === 'error'}
+    {:else if status.step === 'error'}
       <div class="grow-0 shrink-0 w-6 h-6 text-slate-500">
         {#if hovered}
           <RefreshIcon />
@@ -66,7 +68,7 @@
           <ExclamationCircleIcon />
         {/if}
       </div>
-    {:else if status === 'done'}
+    {:else if status.step === 'done'}
       <div class="grow-0 shrink-0 w-6 h-6 text-slate-500">
         <ExternalLinkIcon />
       </div>
@@ -75,24 +77,24 @@
       <div class="whitespace-nowrap overflow-hidden text-ellipsis font-semibold">{video.title}</div>
       <div class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-400">
         {#if cancelHovered}
-          {#if status === 'processing' || status === 'downloading'}
+          {#if status.step === 'processing' || status.step === 'downloading'}
             Cancel
           {:else}
             Remove
           {/if}
-        {:else if status === 'processing'}
+        {:else if status.step === 'processing'}
           Processing
-        {:else if status === 'downloading'}
+        {:else if status.step === 'downloading'}
           Downloading
-        {:else if status === 'queued'}
+        {:else if status.step === 'queued'}
           Queued
-        {:else if status === 'error'}
+        {:else if status.step === 'error'}
           {#if hovered}
             Retry
           {:else}
             Failed
           {/if}
-        {:else if status === 'done'}
+        {:else if status.step === 'done'}
           Open
         {/if}
       </div>

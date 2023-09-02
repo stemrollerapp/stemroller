@@ -178,7 +178,7 @@ async function ensureDemucsPathsExist(paths) {
 async function _processVideo(video, tmpDir) {
   const beginTime = Date.now()
   console.log(`BEGIN downloading/processing video "${video.videoId}" - "${video.title}"`)
-  setVideoStatusAndPath(video.videoId, 'downloading', null)
+  setVideoStatusAndPath(video.videoId, { step: 'downloading' }, null)
 
   let mediaPath = null
 
@@ -194,7 +194,7 @@ async function _processVideo(video, tmpDir) {
     throw new Error(`Invalid mediaSource: ${video.mediaSource}`)
   }
 
-  setVideoStatusAndPath(video.videoId, 'processing', null)
+  setVideoStatusAndPath(video.videoId, { step: 'processing' }, null)
   const jobCount = getJobCount()
   console.log(
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
@@ -267,7 +267,7 @@ async function _processVideo(video, tmpDir) {
       elapsedSeconds
     )} seconds`
   )
-  setVideoStatusAndPath(video.videoId, 'done', outputBasePath)
+  setVideoStatusAndPath(video.videoId, { step: 'done' }, outputBasePath)
 }
 
 async function processVideo(video) {
@@ -291,7 +291,7 @@ async function processVideo(video) {
     if (status === null) {
       console.log('Task was canceled by user.')
     } else {
-      setVideoStatusAndPath(video.videoId, 'error', null)
+      setVideoStatusAndPath(video.videoId, { step: 'error' }, null)
     }
   } finally {
     try {
@@ -324,7 +324,7 @@ module.exports.setItems = async (items) => {
   items = items.filter((video) => {
     let status = module.exports.getVideoStatus(video.videoId)
     if (status === null) {
-      status = 'queued'
+      status = { step: 'queued' }
       setVideoStatusAndPath(video.videoId, status, null)
     }
     return status !== 'done' && status !== 'error'
