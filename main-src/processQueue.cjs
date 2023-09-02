@@ -7,7 +7,7 @@ const childProcess = require('child_process')
 const treeKill = require('tree-kill')
 const ytdl = require('@distube/ytdl-core')
 const sanitizeFilename = require('sanitize-filename')
-const { powerSaveBlocker } = require('electron')
+const { BrowserWindow, powerSaveBlocker } = require('electron')
 
 let statusUpdateCallback = null,
   donateUpdateCallback = null
@@ -98,7 +98,23 @@ function killCurChildProcess() {
   }
 }
 
-function spawnAndWait(cwd, command, args) {
+function updateProgress(videoId, data) {
+  // Check if the output contains the progress update
+  const progressMatch = data.toString().match(/\r\s+\d+%|/)
+  if (progressMatch) {
+    const progress = parseInt(progressMatch)
+    // Find the renderer window and send the update
+    let mainWindow = BrowserWindow.getAllWindows()[0]
+    if (!isNaN(progress) && mainWindow) {
+      mainWindow.webContents.send('videoStatusUpdate', {
+        videoId,
+        status: { step: 'processing', progress: progress },
+      })
+    }
+  }
+}
+
+function spawnAndWait(videoId, cwd, command, args) {
   return new Promise((resolve, reject) => {
     killCurChildProcess()
 
@@ -113,6 +129,8 @@ function spawnAndWait(cwd, command, args) {
 
     curChildProcess.stderr.on('data', (data) => {
       console.log(`child stderr:\n${data}`)
+      // For some reason the progress displays in stderr instead of stdout
+      updateProgress(videoId, data)
     })
 
     curChildProcess.on('error', (error) => {
@@ -194,7 +212,7 @@ async function _processVideo(video, tmpDir) {
     throw new Error(`Invalid mediaSource: ${video.mediaSource}`)
   }
 
-  setVideoStatusAndPath(video.videoId, { step: 'processing' }, null)
+  setVideoStatusAndPath(video.videoId, { step: 'processing', progress: 0 }, null)
   const jobCount = getJobCount()
   console.log(
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
@@ -207,7 +225,7 @@ async function _processVideo(video, tmpDir) {
   if (PATH_TO_MODELS) {
     demucsExeArgs.push('--repo', PATH_TO_MODELS)
   }
-  await spawnAndWait(tmpDir, DEMUCS_EXE_NAME, demucsExeArgs)
+  await spawnAndWait(video.videoId, tmpDir, DEMUCS_EXE_NAME, demucsExeArgs)
 
   const demucsBasePath = await findDemucsOutputDir(
     path.join(tmpDir, 'separated', DEMUCS_MODEL_NAME)
@@ -226,7 +244,7 @@ async function _processVideo(video, tmpDir) {
 
   const instrumentalPath = path.join(tmpDir, 'instrumental.wav')
   console.log(`Mixing down instrumental stems to "${instrumentalPath}"`)
-  await spawnAndWait(tmpDir, FFMPEG_EXE_NAME, [
+  await spawnAndWait(video.videoId, tmpDir, FFMPEG_EXE_NAME, [
     '-i',
     demucsPaths.bass,
     '-i',

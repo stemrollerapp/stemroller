@@ -1,5 +1,5 @@
 <script>
-  import { onDestroy } from 'svelte'
+  import { onDestroy, onMount } from 'svelte'
   import Button from '$components/Button.svelte'
   import LoadingSpinnerIcon from '$icons/animated/LoadingSpinnerIcon.svelte'
   import CollectionIcon from '$icons/outline/CollectionIcon.svelte'
@@ -83,7 +83,7 @@
             Remove
           {/if}
         {:else if status.step === 'processing'}
-          Processing
+          Processing {status.progress}%
         {:else if status.step === 'downloading'}
           Downloading
         {:else if status.step === 'queued'}
