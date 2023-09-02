@@ -27,7 +27,7 @@
       }
     } catch (err) {
       console.error(err)
-      status = 'error'
+      status = { step: 'error' }
       videos = null
     }
   }, 500)
@@ -36,7 +36,7 @@
     const query = event.target.value.trim()
 
     if (query.length > 0) {
-      status = 'loading'
+      status = { step: 'loading' }
       videos = null
       hasQuery = true
       debouncedSearch(query)
@@ -72,7 +72,7 @@
     <div class="absolute top-4 left-4 w-6 h-6 text-slate-500 pointer-events-none">
       <SearchIcon />
     </div>
-    {#if status === 'loading'}
+    {#if status !== null && status.step === 'loading'}
       <div class="absolute top-4 right-4 w-5 h-5 text-slate-100 animate-pulse pointer-events-none">
         <LoadingSpinnerIcon />
       </div>
@@ -84,7 +84,7 @@
       {#each videos as video}
         <ResultCard {video} {onSplitClicked} />
       {/each}
-    {:else if status === 'error'}
+    {:else if status !==null && status.step === 'error'}
       <p class="m-4 text-slate-400 text-center">An error occurred. Please make sure you&apos;re connected to the internet and try again.</p>
     {:else if !hasQuery}
       <div class="w-6 h-6 self-center animate-bounce text-slate-500 pointer-events-none">
