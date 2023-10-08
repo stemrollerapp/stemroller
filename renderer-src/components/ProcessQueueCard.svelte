@@ -84,7 +84,7 @@
             Remove
           {/if}
         {:else if status.step === 'processing'}
-          Processing ({Math.min(Math.max(0, (status.quantity - 1) * 25 + Math.floor(status.progress * 0.25)), 99)}%)
+          Processing ({Math.min(Math.max(0, (status.stemIdx - 1) * 25 + Math.floor(status.progress * 0.25)), 99)}%)
         {:else if status.step === 'downloading'}
           Downloading
         {:else if status.step === 'queued'}

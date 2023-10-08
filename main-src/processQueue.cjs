@@ -14,7 +14,7 @@ let statusUpdateCallback = null,
 let curItems = [],
   curChildProcess = null,
   curYtdlAbortController = null
-let quantity = 0
+let curProgressStemIdx = 0
 
 function getPathToThirdPartyApps() {
   if (process.env.NODE_ENV === 'dev') {
@@ -97,6 +97,8 @@ function killCurChildProcess() {
     }
     curChildProcess = null
   }
+
+  curProgressStemIdx = 0
 }
 
 function updateProgress(videoId, data) {
@@ -105,14 +107,18 @@ function updateProgress(videoId, data) {
   if (progressMatch) {
     const progress = parseInt(progressMatch)
     if (progress === 0) {
-      quantity++
+      ++curProgressStemIdx
     }
     // Find the renderer window and send the update
     let mainWindow = BrowserWindow.getAllWindows()[0]
     if (!isNaN(progress) && mainWindow) {
       mainWindow.webContents.send('videoStatusUpdate', {
         videoId,
-        status: { step: 'processing', progress, quantity },
+        status: {
+          step: 'processing',
+          progress,
+          stemIdx: curProgressStemIdx,
+        },
       })
     }
   }
@@ -121,6 +127,8 @@ function updateProgress(videoId, data) {
 function spawnAndWait(videoId, cwd, command, args) {
   return new Promise((resolve, reject) => {
     killCurChildProcess()
+
+    curProgressStemIdx = 0
 
     curChildProcess = childProcess.spawn(command, args, {
       cwd,
@@ -216,7 +224,11 @@ async function _processVideo(video, tmpDir) {
     throw new Error(`Invalid mediaSource: ${video.mediaSource}`)
   }
 
-  setVideoStatusAndPath(video.videoId, { step: 'processing', progress: 0, quantity: 0 }, null)
+  setVideoStatusAndPath(video.videoId, {
+    step: 'processing',
+    progress: 0,
+    stemIdx: 0,
+  }, null)
   const jobCount = getJobCount()
   console.log(
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
