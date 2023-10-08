@@ -132,8 +132,6 @@ function spawnAndWait(videoId, cwd, command, args) {
     })
 
     curChildProcess.stderr.on('data', (data) => {
-      // For some reason the progress displays in stderr instead of stdout
-      updateProgress(data)
       console.log(`child stderr:\n${data}`)
       // For some reason the progress displays in stderr instead of stdout
       updateProgress(videoId, data)
