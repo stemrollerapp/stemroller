@@ -45,7 +45,7 @@
       <div class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-400">{video.author.name}</div>
     </div>
     {#if status !== null && status.step === 'processing'}
-      <Button Icon={LoadingSpinnerIcon} text="Processing {status.quantity}/4 {status.progress}%" disabled={true} />
+      <Button Icon={LoadingSpinnerIcon} text="Processing ({Math.min(Math.max(0, (status.quantity - 1) * 25 + Math.floor(status.progress * 0.25)), 99)}%)" disabled={true} />
     {:else if status !== null && status.step === 'downloading'}
       <Button Icon={LoadingSpinnerIcon} text="Downloading" disabled={true} />
     {:else if status !== null && status.step === 'queued'}

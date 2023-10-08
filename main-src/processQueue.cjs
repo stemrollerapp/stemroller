@@ -101,7 +101,7 @@ function killCurChildProcess() {
 
 function updateProgress(videoId, data) {
   // Check if the output contains the progress update
-  const progressMatch = data.toString().match(/\r\s+\d+%|/)
+  const progressMatch = data.toString().match(/\r\s+\d+%\|/)
   if (progressMatch) {
     const progress = parseInt(progressMatch)
     if (progress === 0) {
