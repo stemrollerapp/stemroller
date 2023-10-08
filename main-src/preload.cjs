@@ -1,17 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
-contextBridge.exposeInMainWorld('electron', {
-  onUpdateProgress: (callback) => {
-    ipcRenderer.on('progress-update', (event, progress) => {
-        callback(progress)
-    })
-
-    return () => {
-        ipcRenderer.removeAllListeners('progress-update')
-    }
-  }
-})
-
 contextBridge.exposeInMainWorld('computeLocalFileHash', (path) =>
   ipcRenderer.invoke('computeLocalFileHash', path)
 )
