@@ -7,13 +7,14 @@ const childProcess = require('child_process')
 const treeKill = require('tree-kill')
 const ytdl = require('@distube/ytdl-core')
 const sanitizeFilename = require('sanitize-filename')
-const { powerSaveBlocker } = require('electron')
+const { BrowserWindow, powerSaveBlocker } = require('electron')
 
 let statusUpdateCallback = null,
   donateUpdateCallback = null
 let curItems = [],
   curChildProcess = null,
   curYtdlAbortController = null
+let curProgressStemIdx = 0
 
 function getPathToThirdPartyApps() {
   if (process.env.NODE_ENV === 'dev') {
@@ -96,11 +97,38 @@ function killCurChildProcess() {
     }
     curChildProcess = null
   }
+
+  curProgressStemIdx = 0
 }
 
-function spawnAndWait(cwd, command, args) {
+function updateProgress(videoId, data) {
+  // Check if the output contains the progress update
+  const progressMatch = data.toString().match(/\r\s+\d+%\|/)
+  if (progressMatch) {
+    const progress = parseInt(progressMatch)
+    if (progress === 0) {
+      ++curProgressStemIdx
+    }
+    // Find the renderer window and send the update
+    let mainWindow = BrowserWindow.getAllWindows()[0]
+    if (!isNaN(progress) && mainWindow) {
+      mainWindow.webContents.send('videoStatusUpdate', {
+        videoId,
+        status: {
+          step: 'processing',
+          progress,
+          stemIdx: curProgressStemIdx,
+        },
+      })
+    }
+  }
+}
+
+function spawnAndWait(videoId, cwd, command, args) {
   return new Promise((resolve, reject) => {
     killCurChildProcess()
+
+    curProgressStemIdx = 0
 
     curChildProcess = childProcess.spawn(command, args, {
       cwd,
@@ -113,6 +141,8 @@ function spawnAndWait(cwd, command, args) {
 
     curChildProcess.stderr.on('data', (data) => {
       console.log(`child stderr:\n${data}`)
+      // For some reason the progress displays in stderr instead of stdout
+      updateProgress(videoId, data)
     })
 
     curChildProcess.on('error', (error) => {
@@ -178,7 +208,7 @@ async function ensureDemucsPathsExist(paths) {
 async function _processVideo(video, tmpDir) {
   const beginTime = Date.now()
   console.log(`BEGIN downloading/processing video "${video.videoId}" - "${video.title}"`)
-  setVideoStatusAndPath(video.videoId, 'downloading', null)
+  setVideoStatusAndPath(video.videoId, { step: 'downloading' }, null)
 
   let mediaPath = null
 
@@ -194,7 +224,11 @@ async function _processVideo(video, tmpDir) {
     throw new Error(`Invalid mediaSource: ${video.mediaSource}`)
   }
 
-  setVideoStatusAndPath(video.videoId, 'processing', null)
+  setVideoStatusAndPath(video.videoId, {
+    step: 'processing',
+    progress: 0,
+    stemIdx: 0,
+  }, null)
   const jobCount = getJobCount()
   console.log(
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
@@ -204,19 +238,24 @@ async function _processVideo(video, tmpDir) {
     console.log('Running with "-d cpu" to force CPU instead of CUDA')
     demucsExeArgs.push('-d', 'cpu')
   }
+
+  const demucsStemsFiletype = module.exports.getOutputFormat()
+  if (demucsStemsFiletype === 'mp3') {
+    demucsExeArgs.push('--mp3')
+  }
   if (PATH_TO_MODELS) {
     demucsExeArgs.push('--repo', PATH_TO_MODELS)
   }
-  await spawnAndWait(tmpDir, DEMUCS_EXE_NAME, demucsExeArgs)
+  await spawnAndWait(video.videoId, tmpDir, DEMUCS_EXE_NAME, demucsExeArgs)
 
   const demucsBasePath = await findDemucsOutputDir(
     path.join(tmpDir, 'separated', DEMUCS_MODEL_NAME)
   )
   const demucsPaths = {
-    bass: path.join(demucsBasePath, 'bass.wav'),
-    drums: path.join(demucsBasePath, 'drums.wav'),
-    other: path.join(demucsBasePath, 'other.wav'),
-    vocals: path.join(demucsBasePath, 'vocals.wav'),
+    bass: path.join(demucsBasePath, 'bass.' + demucsStemsFiletype),
+    drums: path.join(demucsBasePath, 'drums.' + demucsStemsFiletype),
+    other: path.join(demucsBasePath, 'other.' + demucsStemsFiletype),
+    vocals: path.join(demucsBasePath, 'vocals.' + demucsStemsFiletype),
   }
 
   const demucsSuccess = await ensureDemucsPathsExist(demucsPaths)
@@ -224,9 +263,9 @@ async function _processVideo(video, tmpDir) {
     throw new Error('Unable to access output stems - Demucs probably failed')
   }
 
-  const instrumentalPath = path.join(tmpDir, 'instrumental.wav')
+  const instrumentalPath = path.join(tmpDir, 'instrumental.' + demucsStemsFiletype)
   console.log(`Mixing down instrumental stems to "${instrumentalPath}"`)
-  await spawnAndWait(tmpDir, FFMPEG_EXE_NAME, [
+  await spawnAndWait(video.videoId, tmpDir, FFMPEG_EXE_NAME, [
     '-i',
     demucsPaths.bass,
     '-i',
@@ -249,11 +288,11 @@ async function _processVideo(video, tmpDir) {
   await fs.mkdir(outputBasePath, { recursive: true })
   console.log(`Copying all stems to "${outputBasePath}"`)
   const outputPaths = {
-    bass: path.join(outputBasePath, 'bass.wav'),
-    drums: path.join(outputBasePath, 'drums.wav'),
-    other: path.join(outputBasePath, 'other.wav'),
-    vocals: path.join(outputBasePath, 'vocals.wav'),
-    instrumental: path.join(outputBasePath, 'instrumental.wav'),
+    bass: path.join(outputBasePath, 'bass.' + demucsStemsFiletype),
+    drums: path.join(outputBasePath, 'drums.' + demucsStemsFiletype),
+    other: path.join(outputBasePath, 'other.' + demucsStemsFiletype),
+    vocals: path.join(outputBasePath, 'vocals.' + demucsStemsFiletype),
+    instrumental: path.join(outputBasePath, 'instrumental.' + demucsStemsFiletype),
   }
 
   for (const i in demucsPaths) {
@@ -267,7 +306,7 @@ async function _processVideo(video, tmpDir) {
       elapsedSeconds
     )} seconds`
   )
-  setVideoStatusAndPath(video.videoId, 'done', outputBasePath)
+  setVideoStatusAndPath(video.videoId, { step: 'done' }, outputBasePath)
 }
 
 async function processVideo(video) {
@@ -291,7 +330,7 @@ async function processVideo(video) {
     if (status === null) {
       console.log('Task was canceled by user.')
     } else {
-      setVideoStatusAndPath(video.videoId, 'error', null)
+      setVideoStatusAndPath(video.videoId, { step: 'error' }, null)
     }
   } finally {
     try {
@@ -324,10 +363,10 @@ module.exports.setItems = async (items) => {
   items = items.filter((video) => {
     let status = module.exports.getVideoStatus(video.videoId)
     if (status === null) {
-      status = 'queued'
+      status = { step: 'queued' }
       setVideoStatusAndPath(video.videoId, status, null)
     }
-    return status !== 'done' && status !== 'error'
+    return status.step !== 'done' && status.step !== 'error'
   })
 
   const oldVideoId = curItems.length > 0 ? curItems[0].videoId : null
@@ -374,7 +413,7 @@ function saveFinishedToVideosDb() {
   let numFinished = 0
   const filtered = {}
   for (const videoId in videosDb) {
-    if (videosDb[videoId].status === 'done') {
+    if (videosDb[videoId].status.step === 'done') {
       filtered[videoId] = videosDb[videoId]
       ++numFinished
     }
@@ -418,6 +457,20 @@ module.exports.getOutputPath = () => {
 
 module.exports.setOutputPath = (outputPath) => {
   electronStore.set('outputPath', outputPath)
+}
+
+module.exports.getOutputFormat = () => {
+  if (electronStore) {
+    const outputFormat = electronStore.get('outputFormat')
+    if (outputFormat) {
+      return outputFormat
+    }
+  }
+  return 'wav'
+}
+
+module.exports.setOutputFormat = (outputFormat) => {
+  electronStore.set('outputFormat', outputFormat)
 }
 
 module.exports.getPyTorchBackend = () => {
@@ -471,7 +524,7 @@ module.exports.isBusy = () => {
   return (
     curItems.filter((video) => {
       const status = module.exports.getVideoStatus(video.videoId)
-      return status === 'processing' || status === 'downloading'
+      return status.step === 'processing' || status.step === 'downloading'
     }).length > 0
   )
 }

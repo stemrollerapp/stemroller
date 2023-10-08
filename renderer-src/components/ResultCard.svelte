@@ -27,6 +27,7 @@
       path = message.path
     })
   }
+
   onDestroy(() => {
     window.setVideoStatusUpdateHandler(video.videoId, 'ResultCard', null)
   })
@@ -42,15 +43,15 @@
       <div class="whitespace-nowrap overflow-hidden text-ellipsis font-semibold">{video.title}</div>
       <div class="whitespace-nowrap overflow-hidden text-ellipsis text-slate-400">{video.author.name}</div>
     </div>
-    {#if status === 'processing'}
-      <Button Icon={LoadingSpinnerIcon} text="Processing" disabled={true} />
-    {:else if status === 'downloading'}
+    {#if status !== null && status.step === 'processing'}
+      <Button Icon={LoadingSpinnerIcon} text="Processing ({Math.min(Math.max(0, (status.stemIdx - 1) * 25 + Math.floor(status.progress * 0.25)), 99)}%)" disabled={true} />
+    {:else if status !== null && status.step === 'downloading'}
       <Button Icon={LoadingSpinnerIcon} text="Downloading" disabled={true} />
-    {:else if status === 'queued'}
+    {:else if status !== null && status.step === 'queued'}
       <Button Icon={CollectionIcon} text="Queued" disabled={true} />
-    {:else if status === 'error'}
+    {:else if status !== null && status.step === 'error'}
       <Button Icon={RefreshIcon} text="Retry" onClick={() => onSplitClicked(video, true)} />
-    {:else if status === 'done'}
+    {:else if status !== null && status.step === 'done'}
       <Button Icon={ExternalLinkIcon} text="Open" onClick={handleOpenStemsClicked} />
     {:else}
       <Button Icon={AdjustmentsIcon} text="Split" onClick={() => onSplitClicked({ mediaSource: 'youtube', ...video }, false)} />

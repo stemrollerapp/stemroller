@@ -29,6 +29,10 @@ contextBridge.exposeInMainWorld('disableDonatePopup', () =>
 )
 contextBridge.exposeInMainWorld('getOutputPath', () => ipcRenderer.invoke('getOutputPath'))
 contextBridge.exposeInMainWorld('browseOutputPath', () => ipcRenderer.invoke('browseOutputPath'))
+contextBridge.exposeInMainWorld('getOutputFormat', () => ipcRenderer.invoke('getOutputFormat'))
+contextBridge.exposeInMainWorld('setOutputFormat', (outputFormat) =>
+  ipcRenderer.invoke('setOutputFormat', outputFormat)
+)
 contextBridge.exposeInMainWorld('getPyTorchBackend', () => ipcRenderer.invoke('getPyTorchBackend'))
 contextBridge.exposeInMainWorld('setPyTorchBackend', (backend) =>
   ipcRenderer.invoke('setPyTorchBackend', backend)
@@ -54,6 +58,7 @@ contextBridge.exposeInMainWorld(
     }
   }
 )
+
 ipcRenderer.on('videoStatusUpdate', (event, message) => {
   if (handlers.has('__global')) {
     for (const handler of handlers.get('__global').values()) {
