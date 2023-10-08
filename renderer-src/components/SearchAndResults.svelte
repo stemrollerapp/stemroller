@@ -1,4 +1,5 @@
 <script>
+  import { onMount, onDestroy } from 'svelte'
   import debounce from 'lodash.debounce'
   import ArrowUpIcon from '$icons/outline/ArrowUpIcon.svelte'
   import SearchIcon from '$icons/outline/SearchIcon.svelte'
@@ -64,6 +65,21 @@
       dndFileExplorerName = 'Finder'
     }
   }
+
+  let progress = 0, quantity = 0
+  let cleanupProgressListener
+  onMount(() => {
+    cleanupProgressListener = window.electron.onUpdateProgress((newProgress) => {
+        progress = newProgress
+        if (newProgress === 0) {
+          quantity++
+        }
+    })
+  })
+
+  onDestroy(() => {
+    cleanupProgressListener && cleanupProgressListener()
+  })
 </script>
 
 <div class="grow shrink overflow-hidden flex flex-col bg-slate-900 text-slate-100">
@@ -82,7 +98,7 @@
   <div class="grow shrink overflow-x-hidden overflow-y-auto flex flex-col p-6 space-y-6">
     {#if videos && status === null}
       {#each videos as video}
-        <ResultCard {video} {onSplitClicked} />
+        <ResultCard {video} {onSplitClicked} {progress} {quantity} />
       {/each}
     {:else if status !== null && status.step === 'error'}
       <p class="m-4 text-slate-400 text-center">An error occurred. Please make sure you&apos;re connected to the internet and try again.</p>

@@ -132,6 +132,8 @@ function spawnAndWait(videoId, cwd, command, args) {
     })
 
     curChildProcess.stderr.on('data', (data) => {
+      // For some reason the progress displays in stderr instead of stdout
+      updateProgress(data)
       console.log(`child stderr:\n${data}`)
       // For some reason the progress displays in stderr instead of stdout
       updateProgress(videoId, data)
@@ -226,6 +228,11 @@ async function _processVideo(video, tmpDir) {
     console.log('Running with "-d cpu" to force CPU instead of CUDA')
     demucsExeArgs.push('-d', 'cpu')
   }
+
+  const demucsStemsFiletype = module.exports.getOutputFormat()
+  if (demucsStemsFiletype === 'mp3') {
+    demucsExeArgs.push('--mp3')
+  }
   if (PATH_TO_MODELS) {
     demucsExeArgs.push('--repo', PATH_TO_MODELS)
   }
@@ -235,10 +242,10 @@ async function _processVideo(video, tmpDir) {
     path.join(tmpDir, 'separated', DEMUCS_MODEL_NAME)
   )
   const demucsPaths = {
-    bass: path.join(demucsBasePath, 'bass.wav'),
-    drums: path.join(demucsBasePath, 'drums.wav'),
-    other: path.join(demucsBasePath, 'other.wav'),
-    vocals: path.join(demucsBasePath, 'vocals.wav'),
+    bass: path.join(demucsBasePath, 'bass.' + demucsStemsFiletype),
+    drums: path.join(demucsBasePath, 'drums.' + demucsStemsFiletype),
+    other: path.join(demucsBasePath, 'other.' + demucsStemsFiletype),
+    vocals: path.join(demucsBasePath, 'vocals.' + demucsStemsFiletype),
   }
 
   const demucsSuccess = await ensureDemucsPathsExist(demucsPaths)
@@ -246,7 +253,7 @@ async function _processVideo(video, tmpDir) {
     throw new Error('Unable to access output stems - Demucs probably failed')
   }
 
-  const instrumentalPath = path.join(tmpDir, 'instrumental.wav')
+  const instrumentalPath = path.join(tmpDir, 'instrumental.' + demucsStemsFiletype)
   console.log(`Mixing down instrumental stems to "${instrumentalPath}"`)
   await spawnAndWait(video.videoId, tmpDir, FFMPEG_EXE_NAME, [
     '-i',
@@ -271,11 +278,11 @@ async function _processVideo(video, tmpDir) {
   await fs.mkdir(outputBasePath, { recursive: true })
   console.log(`Copying all stems to "${outputBasePath}"`)
   const outputPaths = {
-    bass: path.join(outputBasePath, 'bass.wav'),
-    drums: path.join(outputBasePath, 'drums.wav'),
-    other: path.join(outputBasePath, 'other.wav'),
-    vocals: path.join(outputBasePath, 'vocals.wav'),
-    instrumental: path.join(outputBasePath, 'instrumental.wav'),
+    bass: path.join(outputBasePath, 'bass.' + demucsStemsFiletype),
+    drums: path.join(outputBasePath, 'drums.' + demucsStemsFiletype),
+    other: path.join(outputBasePath, 'other.' + demucsStemsFiletype),
+    vocals: path.join(outputBasePath, 'vocals.' + demucsStemsFiletype),
+    instrumental: path.join(outputBasePath, 'instrumental.' + demucsStemsFiletype),
   }
 
   for (const i in demucsPaths) {
@@ -440,6 +447,20 @@ module.exports.getOutputPath = () => {
 
 module.exports.setOutputPath = (outputPath) => {
   electronStore.set('outputPath', outputPath)
+}
+
+module.exports.getOutputFormat = () => {
+  if (electronStore) {
+    const outputFormat = electronStore.get('outputFormat')
+    if (outputFormat) {
+      return outputFormat
+    }
+  }
+  return 'wav'
+}
+
+module.exports.setOutputFormat = (outputFormat) => {
+  electronStore.set('outputFormat', outputFormat)
 }
 
 module.exports.getPyTorchBackend = () => {
