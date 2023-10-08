@@ -8,7 +8,6 @@
   import LoadingSpinnerIcon from '$icons/animated/LoadingSpinnerIcon.svelte'
 
   export let video = null, onSplitClicked = null
-  export let progress = null, quantity = null
 
   async function handleOpenStemsClicked() {
     const result = await window.openStemsPath(video)
