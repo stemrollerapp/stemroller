@@ -7,7 +7,7 @@ const childProcess = require('child_process')
 const treeKill = require('tree-kill')
 const ytdl = require('@distube/ytdl-core')
 const sanitizeFilename = require('sanitize-filename')
-const { BrowserWindow, powerSaveBlocker } = require('electron')
+const { app, BrowserWindow, powerSaveBlocker } = require('electron')
 
 let statusUpdateCallback = null,
   donateUpdateCallback = null
@@ -65,6 +65,7 @@ const CHILD_PROCESS_ENV = {
   PATH: process.env.PATH,
   TEMP: process.env.TEMP,
   TMP: process.env.TMP,
+  LANG: null, // Will be set when ready to split, since we can only check system locale after `app` is ready
 }
 if (PATH_TO_THIRD_PARTY_APPS) {
   // Override the system's PATH with the path to our own bundled third-party apps
@@ -130,6 +131,7 @@ function spawnAndWait(videoId, cwd, command, args) {
 
     curProgressStemIdx = 0
 
+    CHILD_PROCESS_ENV.LANG = `${(app.getSystemLocale() || 'en-US').replace('-', '_')}.UTF-8` // Set here instead of when CHILD_PROCESS_ENV defined, because app must be ready before we can read the system locale
     curChildProcess = childProcess.spawn(command, args, {
       cwd,
       env: CHILD_PROCESS_ENV,
@@ -224,11 +226,15 @@ async function _processVideo(video, tmpDir) {
     throw new Error(`Invalid mediaSource: ${video.mediaSource}`)
   }
 
-  setVideoStatusAndPath(video.videoId, {
-    step: 'processing',
-    progress: 0,
-    stemIdx: 0,
-  }, null)
+  setVideoStatusAndPath(
+    video.videoId,
+    {
+      step: 'processing',
+      progress: 0,
+      stemIdx: 0,
+    },
+    null
+  )
   const jobCount = getJobCount()
   console.log(
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
@@ -237,6 +243,10 @@ async function _processVideo(video, tmpDir) {
   if (module.exports.getPyTorchBackend() === 'cpu') {
     console.log('Running with "-d cpu" to force CPU instead of CUDA')
     demucsExeArgs.push('-d', 'cpu')
+  } else if (process.platform === 'darwin') {
+    // Maybe need to apply https://github.com/facebookresearch/demucs/pull/575/files instead, in case MPS is not available on Intel Macs ??
+    console.log('Running with "-d mps" to force MPS instead of CPU/CUDA')
+    demucsExeArgs.push('-d', 'mps')
   }
 
   const demucsStemsFiletype = module.exports.getOutputFormat()

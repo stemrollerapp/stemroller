@@ -21,7 +21,6 @@ function extract7z(archivePath, outPath) {
 }
 
 let winOrMac = null
-let macSuffix = ''
 let cudaSuffix = ''
 let demucsZipOr7z = null
 if (process.platform === 'win32') {
@@ -30,7 +29,6 @@ if (process.platform === 'win32') {
   demucsZipOr7z = '7z'
 } else if (process.platform === 'darwin') {
   winOrMac = 'mac'
-  macSuffix = '_sierra'
   demucsZipOr7z = 'zip'
 }
 
@@ -101,12 +99,12 @@ async function main() {
       path.join('anyos-extra-files', 'Models', 'htdemucs_ft.yaml'),
     ],
     [
-      `https://github.com/stemrollerapp/demucs-cxfreeze/releases/download/2.0.0/demucs-cxfreeze-2.0.0-${winOrMac}${macSuffix}${cudaSuffix}.${demucsZipOr7z}`,
+      `https://github.com/stemrollerapp/demucs-cxfreeze/releases/download/release-26a2baeb0058444b3cf87028d9df721d37c78dfb/demucs-cxfreeze-${winOrMac}${cudaSuffix}.${demucsZipOr7z}`,
       path.join(
         `${winOrMac}-extra-files`,
         'ThirdPartyApps',
         'demucs-cxfreeze',
-        `demucs-cxfreeze-2.0.0-${winOrMac}${macSuffix}${cudaSuffix}.${demucsZipOr7z}`
+        `demucs-cxfreeze-${winOrMac}${cudaSuffix}.${demucsZipOr7z}`
       ),
     ],
   ]
@@ -168,7 +166,7 @@ async function main() {
       `${winOrMac}-extra-files`,
       'ThirdPartyApps',
       'demucs-cxfreeze',
-      `demucs-cxfreeze-2.0.0-${winOrMac}${macSuffix}${cudaSuffix}`
+      `demucs-cxfreeze-${winOrMac}${cudaSuffix}`
     )
   )
 
@@ -178,7 +176,7 @@ async function main() {
         `${winOrMac}-extra-files`,
         'ThirdPartyApps',
         'ffmpeg',
-        'ffmpeg-6.0-essentials_build'
+        'ffmpeg-7.0-essentials_build'
       )
     )
   } else if (process.platform === 'darwin') {
