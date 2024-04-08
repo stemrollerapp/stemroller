@@ -293,8 +293,15 @@ async function _processVideo(video, tmpDir) {
     )
   }
 
-  const outputFolderName = sanitizeFilename(`${video.title}-${video.videoId}`)
-  const outputBasePath = path.join(module.exports.getOutputPath(), outputFolderName)
+  const outputFolderName =
+    video.mediaSource === 'youtube'
+      ? sanitizeFilename(`${video.title}-${video.videoId}`)
+      : sanitizeFilename(video.title)
+  const outputBasePathContainingFolder =
+    video.mediaSource === 'local' && module.exports.getLocalFileOutputToContainingDir()
+      ? path.dirname(mediaPath)
+      : module.exports.getOutputPath()
+  const outputBasePath = path.join(outputBasePathContainingFolder, outputFolderName)
   await fs.mkdir(outputBasePath, { recursive: true })
   console.log(`Copying all stems to "${outputBasePath}"`)
   const outputPaths = {
@@ -465,8 +472,16 @@ module.exports.getOutputPath = () => {
   return path.join(os.homedir(), 'Music', 'StemRoller')
 }
 
+module.exports.getLocalFileOutputToContainingDir = () => {
+  return electronStore.get('localFileOutputToContainingDir') || false
+}
+
 module.exports.setOutputPath = (outputPath) => {
   electronStore.set('outputPath', outputPath)
+}
+
+module.exports.setLocalFileOutputToContainingDir = (value) => {
+  electronStore.set('localFileOutputToContainingDir', value)
 }
 
 module.exports.getOutputFormat = () => {
