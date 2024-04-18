@@ -128,6 +128,10 @@ async function handleGetOutputPath() {
   return processQueue.getOutputPath()
 }
 
+async function handleGetLocalFileOutputToContainingDir() {
+  return processQueue.getLocalFileOutputToContainingDir()
+}
+
 async function handleBrowseOutputPath() {
   const response = await dialog.showOpenDialog(mainWindow, {
     title: 'Select folder to store output stems',
@@ -138,6 +142,10 @@ async function handleBrowseOutputPath() {
     return processQueue.getOutputPath()
   }
   return null
+}
+
+async function handleSetLocalFileOutputToContainingDir(event, value) {
+  return processQueue.setLocalFileOutputToContainingDir(value)
 }
 
 async function handleGetOutputFormat() {
@@ -276,7 +284,9 @@ function main() {
     ipcMain.handle('openChat', handleOpenChat)
     ipcMain.handle('disableDonatePopup', handleDisableDonatePopup)
     ipcMain.handle('getOutputPath', handleGetOutputPath)
+    ipcMain.handle('getLocalFileOutputToContainingDir', handleGetLocalFileOutputToContainingDir)
     ipcMain.handle('browseOutputPath', handleBrowseOutputPath)
+    ipcMain.handle('setLocalFileOutputToContainingDir', handleSetLocalFileOutputToContainingDir)
     ipcMain.handle('getOutputFormat', handleGetOutputFormat)
     ipcMain.handle('setOutputFormat', handleSetOutputFormat)
     ipcMain.handle('getPyTorchBackend', handleGetPyTorchBackend)
