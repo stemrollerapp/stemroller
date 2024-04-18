@@ -21,10 +21,8 @@
       const results = await window.youtubeSearch(query)
       if (results.videos.length > 0) {
         videos = results.videos
-        status = null
-      } else {
-        throw new Error('No video results available')
       }
+      status = null
     } catch (err) {
       console.error(err)
       status = { step: 'error' }
@@ -84,6 +82,8 @@
       {#each videos as video}
         <ResultCard {video} {onSplitClicked} />
       {/each}
+    {:else if status === null && !videos?.length}
+      <p class="m-4 text-slate-400 text-center">No video results available.</p>
     {:else if status !== null && status.step === 'error'}
       <p class="m-4 text-slate-400 text-center">An error occurred. Please make sure you&apos;re connected to the internet and try again.</p>
     {:else if !hasQuery}
