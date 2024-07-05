@@ -59,6 +59,7 @@
     "electron-fetch": "^1.7.4",
     "electron-serve": "^1.1.0",
     "electron-store": "^8.0.2",
+    "file-type": "16.5.3",
     "sanitize-filename": "^1.6.3",
     "tree-kill": "^1.2.2",
     "xxhash-wasm": "^1.0.1",

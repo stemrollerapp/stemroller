@@ -1,5 +1,6 @@
 const os = require('os')
 const fs = require('fs/promises')
+const fileType = require('file-type')
 const { createWriteStream } = require('fs')
 const { pipeline } = require('stream/promises')
 const path = require('path')
@@ -310,12 +311,29 @@ async function _processVideo(video, tmpDir) {
     other: path.join(outputBasePath, 'other.' + demucsStemsFiletype),
     vocals: path.join(outputBasePath, 'vocals.' + demucsStemsFiletype),
     instrumental: path.join(outputBasePath, 'instrumental.' + demucsStemsFiletype),
+    original: path.join(outputBasePath, 'original'),
   }
 
   for (const i in demucsPaths) {
     await fs.copyFile(demucsPaths[i], outputPaths[i])
   }
   await fs.copyFile(instrumentalPath, outputPaths.instrumental)
+  const originalPath = path.join(tmpDir, 'yt-audio')
+  await fs.copyFile(originalPath, outputPaths.original)
+  const buffer = await fs.readFile(outputPaths.original)
+  const type = await fileType.fromBuffer(buffer)
+  if (type) {
+    const newFilename = `${outputPaths.original}.${type.ext}`
+    await fs.rename(outputPaths.original, newFilename)
+    await spawnAndWait(video.videoId, outputBasePath, FFMPEG_EXE_NAME, [
+      '-i',
+      newFilename,
+      '-ar',
+      44100,
+      outputPaths.original + '.' + demucsStemsFiletype,
+    ])
+    await fs.rm(newFilename)
+  }
 
   const elapsedSeconds = (Date.now() - beginTime) * 0.001
   console.log(
