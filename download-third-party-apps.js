@@ -176,7 +176,7 @@ async function main() {
         `${winOrMac}-extra-files`,
         'ThirdPartyApps',
         'ffmpeg',
-        'ffmpeg-7.0-essentials_build'
+        'ffmpeg-7.0.1-essentials_build'
       )
     )
   } else if (process.platform === 'darwin') {
