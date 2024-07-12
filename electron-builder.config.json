@@ -19,7 +19,7 @@
     }
   ],
   "mac": {
-    "target": "dir",
+    "target": [{ "target": "dir", "arch": ["x64"] }],
     "category": "public.app-category.music",
     "extraFiles": [
       {
