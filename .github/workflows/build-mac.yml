@@ -14,7 +14,7 @@ jobs:
           ref: main
       - uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 20
           cache: 'npm'
       - run: npm i -D
       - run: npm run download-third-party-apps
