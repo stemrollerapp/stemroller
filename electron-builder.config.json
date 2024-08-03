@@ -12,12 +12,6 @@
     "main-src",
     "package.json"
   ],
-  "extraFiles": [
-    {
-      "from": "anyos-extra-files/Models",
-      "to": "Models"
-    }
-  ],
   "mac": {
     "target": [{ "target": "dir", "arch": ["x64"] }],
     "category": "public.app-category.music",
