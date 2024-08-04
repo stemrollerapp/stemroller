@@ -105,14 +105,17 @@ function updateDemucsProgress(videoId, data) {
   // Check if the output contains the progress update
   const progressMatch = data.toString().match(/\r\s+\d+%\|/)
   if (progressMatch) {
-    const progress = parseInt(progressMatch)
+    let progress = parseInt(progressMatch)
+    if (isNaN(progress)) {
+      return
+    }
     if (curProgressFtStemIdx !== null && progress === 0) {
       ++curProgressFtStemIdx
     }
     progress /= 100
     // Find the renderer window and send the update
     let mainWindow = BrowserWindow.getAllWindows()[0]
-    if (!isNaN(progress) && mainWindow) {
+    if (mainWindow) {
       mainWindow.webContents.send('videoStatusUpdate', {
         videoId,
         status: {
