@@ -35,6 +35,9 @@ contextBridge.exposeInMainWorld('getLocalFileOutputToContainingDir', () =>
 contextBridge.exposeInMainWorld('getPrefixStemFilenameWithSongName', () =>
   ipcRenderer.invoke('getPrefixStemFilenameWithSongName')
 )
+contextBridge.exposeInMainWorld('getPreserveOriginalAudio', () =>
+  ipcRenderer.invoke('getPreserveOriginalAudio')
+)
 contextBridge.exposeInMainWorld('browseOutputPath', () => ipcRenderer.invoke('browseOutputPath'))
 contextBridge.exposeInMainWorld('setModelName', (value) =>
   ipcRenderer.invoke('setModelName', value)
@@ -44,6 +47,9 @@ contextBridge.exposeInMainWorld('setLocalFileOutputToContainingDir', (value) =>
 )
 contextBridge.exposeInMainWorld('setPrefixStemFilenameWithSongName', (value) =>
   ipcRenderer.invoke('setPrefixStemFilenameWithSongName', value)
+)
+contextBridge.exposeInMainWorld('setPreserveOriginalAudio', (value) =>
+  ipcRenderer.invoke('setPreserveOriginalAudio', value)
 )
 contextBridge.exposeInMainWorld('getOutputFormat', () => ipcRenderer.invoke('getOutputFormat'))
 contextBridge.exposeInMainWorld('setOutputFormat', (outputFormat) =>

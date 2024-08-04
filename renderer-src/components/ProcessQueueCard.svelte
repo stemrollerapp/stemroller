@@ -8,8 +8,11 @@
   import ExternalLinkIcon from '$icons/outline/ExternalLinkIcon.svelte'
   import XCircleIcon from '$icons/solid/XCircleIcon.svelte'
 
-  export let video = null, onSplitClicked = null, onCancelClicked = null
-  let hovered = false, cancelHovered = false
+  export let video = null,
+    onSplitClicked = null,
+    onCancelClicked = null
+  let hovered = false,
+    cancelHovered = false
 
   function handleCancelClicked(event) {
     event.stopPropagation()
@@ -23,10 +26,12 @@
     }
   }
 
-  let status = null, path = null, onClick = null
+  let status = null,
+    path = null,
+    onClick = null
   $: {
-    window.getVideoStatus(video.videoId).then((newStatus) => status = newStatus)
-    window.getVideoPath(video.videoId).then((newPath) => path = newPath)
+    window.getVideoStatus(video.videoId).then((newStatus) => (status = newStatus))
+    window.getVideoPath(video.videoId).then((newPath) => (path = newPath))
   }
   $: {
     window.setVideoStatusUpdateHandler(video.videoId, 'ProcessQueueCard', (message) => {
@@ -52,7 +57,13 @@
 </script>
 
 {#if status !== null}
-  <button class="overflow-hidden grow-0 shrink-0 w-60 flex flex-row px-4 p-2 space-x-4 items-center rounded-md text-left bg-slate-800 drop-shadow-md" disabled={!onClick} on:click={onClick} on:mouseenter={() => hovered = true} on:mouseleave={() => hovered = false}>
+  <button
+    class="overflow-hidden grow-0 shrink-0 w-60 flex flex-row px-4 p-2 space-x-4 items-center rounded-md text-left bg-slate-800 drop-shadow-md"
+    disabled={!onClick}
+    on:click={onClick}
+    on:mouseenter={() => (hovered = true)}
+    on:mouseleave={() => (hovered = false)}
+  >
     {#if status.step === 'processing' || status.step === 'downloading'}
       <div class="grow-0 shrink-0 w-5 h-5 text-slate-100 animate-pulse">
         <LoadingSpinnerIcon />
@@ -84,7 +95,7 @@
             Remove
           {/if}
         {:else if status.step === 'processing'}
-          Processing ({Math.min(Math.max(0, (status.stemIdx - 1) * 25 + Math.floor(status.progress * 0.25)), 99)}%)
+          Processing ({Math.floor(status.progress)}%)
         {:else if status.step === 'downloading'}
           Downloading
         {:else if status.step === 'queued'}
@@ -100,7 +111,12 @@
         {/if}
       </div>
     </div>
-    <button class="grow-0 shrink-0 w-5 h-5 text-slate-500 hover:text-slate-400 transition:color" on:click={handleCancelClicked} on:mouseenter={() => cancelHovered = true} on:mouseleave={() => cancelHovered = false}>
+    <button
+      class="grow-0 shrink-0 w-5 h-5 text-slate-500 hover:text-slate-400 transition:color"
+      on:click={handleCancelClicked}
+      on:mouseenter={() => (cancelHovered = true)}
+      on:mouseleave={() => (cancelHovered = false)}
+    >
       <XCircleIcon />
     </button>
   </button>

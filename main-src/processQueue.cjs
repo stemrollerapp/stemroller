@@ -14,7 +14,7 @@ let statusUpdateCallback = null,
 let curItems = [],
   curChildProcess = null,
   curYtdlAbortController = null
-let curProgressStemIdx = 0
+let curProgressFtStemIdx = null
 
 function getPathToThirdPartyApps() {
   if (process.env.NODE_ENV === 'dev') {
@@ -98,17 +98,18 @@ function killCurChildProcess() {
     curChildProcess = null
   }
 
-  curProgressStemIdx = 0
+  curProgressFtStemIdx = null
 }
 
-function updateProgress(videoId, data) {
+function updateDemucsProgress(videoId, data) {
   // Check if the output contains the progress update
   const progressMatch = data.toString().match(/\r\s+\d+%\|/)
   if (progressMatch) {
     const progress = parseInt(progressMatch)
-    if (progress === 0) {
-      ++curProgressStemIdx
+    if (curProgressFtStemIdx !== null && progress === 0) {
+      ++curProgressFtStemIdx
     }
+    progress /= 100
     // Find the renderer window and send the update
     let mainWindow = BrowserWindow.getAllWindows()[0]
     if (!isNaN(progress) && mainWindow) {
@@ -116,19 +117,19 @@ function updateProgress(videoId, data) {
         videoId,
         status: {
           step: 'processing',
-          progress,
-          stemIdx: curProgressStemIdx,
+          progress:
+            (curProgressFtStemIdx === null
+              ? progress
+              : (curProgressFtStemIdx - 1) / 4 + progress / 4) * 0.95, // * 0.95 because of conversion step at end
         },
       })
     }
   }
 }
 
-function spawnAndWait(videoId, cwd, command, args) {
+function spawnAndWait(videoId, cwd, command, args, isDemucs) {
   return new Promise((resolve, reject) => {
     killCurChildProcess()
-
-    curProgressStemIdx = 0
 
     CHILD_PROCESS_ENV.LANG = `${(app.getSystemLocale() || 'en-US').replace('-', '_')}.UTF-8` // Set here instead of when CHILD_PROCESS_ENV defined, because app must be ready before we can read the system locale
     curChildProcess = childProcess.spawn(command, args, {
@@ -142,8 +143,10 @@ function spawnAndWait(videoId, cwd, command, args) {
 
     curChildProcess.stderr.on('data', (data) => {
       console.log(`child stderr:\n${data}`)
-      // For some reason the progress displays in stderr instead of stdout
-      updateProgress(videoId, data)
+      if (isDemucs) {
+        // For some reason the progress displays in stderr instead of stdout
+        updateProgress(videoId, data)
+      }
     })
 
     curChildProcess.on('error', (error) => {
@@ -217,12 +220,13 @@ async function convertDemucsFiles({ videoId, tmpDir, filesList, filetype, compre
     const parsedOldFilename = path.parse(oldFilename)
     const newFilename = `${path.join(parsedOldFilename.dir, parsedOldFilename.name)}.${filetype}`
 
-    await spawnAndWait(videoId, tmpDir, FFMPEG_EXE_NAME, [
-      '-i',
-      oldFilename,
-      ...compressionArgs,
-      newFilename,
-    ])
+    await spawnAndWait(
+      videoId,
+      tmpDir,
+      FFMPEG_EXE_NAME,
+      ['-i', oldFilename, ...compressionArgs, newFilename],
+      false
+    )
 
     const success = await ensureFileExists(newFilename)
     if (!success) {
@@ -251,6 +255,7 @@ async function _processVideo(video, tmpDir) {
   const demucsStemsFiletype = module.exports.getOutputFormat()
   const compressionArgs = getFfmpegCompressionArguments(demucsStemsFiletype)
   const needsPrefix = module.exports.getPrefixStemFilenameWithSongName()
+  const needsOriginal = module.exports.getPreserveOriginalAudio()
 
   const beginTime = Date.now()
   console.log(`BEGIN downloading/processing video "${video.videoId}" - "${video.title}"`)
@@ -281,7 +286,6 @@ async function _processVideo(video, tmpDir) {
     {
       step: 'processing',
       progress: 0,
-      stemIdx: 0,
     },
     null
   )
@@ -302,7 +306,13 @@ async function _processVideo(video, tmpDir) {
   if (PATH_TO_MODELS) {
     demucsExeArgs.push('--repo', PATH_TO_MODELS)
   }
-  await spawnAndWait(video.videoId, tmpDir, DEMUCS_EXE_NAME, demucsExeArgs)
+  if (demucsModelName.indexOf('_ft') >= 0) {
+    curProgressFtStemIdx = 0
+  } else {
+    curProgressFtStemIdx = null
+  }
+  await spawnAndWait(video.videoId, tmpDir, DEMUCS_EXE_NAME, demucsExeArgs, true)
+  curProgressFtStemIdx = null
 
   const demucsBasePath = await findDemucsOutputDir(path.join(tmpDir, 'separated', demucsModelName))
   const demucsWavFilesList = await listDemucsOutputFiles(demucsBasePath)
@@ -331,17 +341,35 @@ async function _processVideo(video, tmpDir) {
     ffmpegInstrumentalSourceFiles.push('-i')
     ffmpegInstrumentalSourceFiles.push(filename)
   }
-  await spawnAndWait(video.videoId, tmpDir, FFMPEG_EXE_NAME, [
-    ...ffmpegInstrumentalSourceFiles,
-    ...compressionArgs,
-    '-filter_complex',
-    `amix=inputs=${ffmpegInstrumentalSourceFiles.length / 2}:normalize=0`,
-    instrumentalPath,
-  ])
+  await spawnAndWait(
+    video.videoId,
+    tmpDir,
+    FFMPEG_EXE_NAME,
+    [
+      ...ffmpegInstrumentalSourceFiles,
+      ...compressionArgs,
+      '-filter_complex',
+      `amix=inputs=${ffmpegInstrumentalSourceFiles.length / 2}:normalize=0`,
+      instrumentalPath,
+    ],
+    false
+  )
   const instrumentalSuccess = await ensureFileExists(instrumentalPath)
   if (!instrumentalSuccess) {
     throw new Error(
       `Unable to access instrumental file "${instrumentalPath}" - ffmpeg probably failed`
+    )
+  }
+
+  let originalOutPath = null
+  if (needsOriginal) {
+    originalOutPath = path.join(tmpDir, `original.${demucsStemsFiletype}`)
+    await spawnAndWait(
+      video.videoId,
+      tmpDir,
+      FFMPEG_EXE_NAME,
+      ['-i', mediaPath, ...compressionArgs, originalOutPath],
+      false
     )
   }
 
@@ -364,6 +392,12 @@ async function _processVideo(video, tmpDir) {
     instrumentalPath,
     path.join(outputBasePath, `${outputFilenamesPrefix}instrumental.${demucsStemsFiletype}`)
   )
+  if (needsOriginal) {
+    await fs.copyFile(
+      originalOutPath,
+      path.join(outputBasePath, `${outputFilenamesPrefix}original.${demucsStemsFiletype}`)
+    )
+  }
 
   const elapsedSeconds = (Date.now() - beginTime) * 0.001
   console.log(
@@ -538,6 +572,10 @@ module.exports.getPrefixStemFilenameWithSongName = () => {
   return electronStore.get('prefixStemFilenameWithSongName') || false
 }
 
+module.exports.getPreserveOriginalAudio = () => {
+  return electronStore.get('preserveOriginalAudio') || false
+}
+
 module.exports.setOutputPath = (outputPath) => {
   electronStore.set('outputPath', outputPath)
 }
@@ -552,6 +590,10 @@ module.exports.setLocalFileOutputToContainingDir = (value) => {
 
 module.exports.setPrefixStemFilenameWithSongName = (value) => {
   electronStore.set('prefixStemFilenameWithSongName', value)
+}
+
+module.exports.setPreserveOriginalAudio = (value) => {
+  electronStore.set('preserveOriginalAudio', value)
 }
 
 module.exports.getOutputFormat = () => {

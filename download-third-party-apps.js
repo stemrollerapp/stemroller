@@ -98,6 +98,14 @@ async function main() {
       path.join('anyos-extra-files', 'Models', 'htdemucs_ft.yaml'),
     ],
     [
+      'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th',
+      path.join('anyos-extra-files', 'Models', '955717e8-8726e21a.th'),
+    ],
+    [
+      'https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/remote/htdemucs.yaml',
+      path.join('anyos-extra-files', 'Models', 'htdemucs.yaml'),
+    ],
+    [
       'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th',
       path.join('anyos-extra-files', 'Models', '5c90dfd2-34c22ccb.th'),
     ],

@@ -13,6 +13,7 @@
   let outputFormat = null
   let localFileOutputToContainingDir = null
   let prefixStemFilenameWithSongName = null
+  let preserveOriginalAudio = null
 
   async function handleBrowseStems() {
     const newOutputPath = await window.browseOutputPath()
@@ -28,6 +29,7 @@
     outputFormat = await window.getOutputFormat()
     localFileOutputToContainingDir = await window.getLocalFileOutputToContainingDir()
     prefixStemFilenameWithSongName = await window.getPrefixStemFilenameWithSongName()
+    preserveOriginalAudio = await window.getPreserveOriginalAudio()
   })
 
   $: {
@@ -45,6 +47,9 @@
     }
     if (prefixStemFilenameWithSongName !== null) {
       window.setPrefixStemFilenameWithSongName(prefixStemFilenameWithSongName)
+    }
+    if (preserveOriginalAudio !== null) {
+      window.setPreserveOriginalAudio(preserveOriginalAudio)
     }
   }
 </script>
@@ -103,6 +108,19 @@
     >
   </div>
 
+  <div class="space-x-2 flex flex-row items-center justify-start mb-2">
+    <input
+      id="checkboxPreserveOriginalAudio"
+      type="checkbox"
+      class="w-4 h-4 grow-0 shrink-0"
+      bind:checked={preserveOriginalAudio}
+    />
+
+    <label for="checkboxPreserveOriginalAudio" class="grow-0 shrink-0"
+      >Preserve original audio</label
+    >
+  </div>
+
   <div class="text-lg font-bold mb-1">Stems output format</div>
 
   <select
@@ -123,6 +141,7 @@
     <option value="htdemucs_ft" class="bg-slate-900 text-slate-300 px-2 py-1"
       >4-channel (Finetuned)</option
     >
+    <option value="htdemucs" class="bg-slate-900 text-slate-300 px-2 py-1">4-channel (Fast)</option>
     <option value="htdemucs_6s" class="bg-slate-900 text-slate-300 px-2 py-1"
       >6-channel (Experimental)</option
     >

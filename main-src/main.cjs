@@ -140,6 +140,10 @@ async function handleGetPrefixStemFilenameWithSongName() {
   return processQueue.getPrefixStemFilenameWithSongName()
 }
 
+async function handleGetPreserveOriginalAudio() {
+  return processQueue.getPreserveOriginalAudio()
+}
+
 async function handleBrowseOutputPath() {
   const response = await dialog.showOpenDialog(mainWindow, {
     title: 'Select folder to store output stems',
@@ -162,6 +166,10 @@ async function handleSetLocalFileOutputToContainingDir(event, value) {
 
 async function handleSetPrefixStemFilenameWithSongName(event, value) {
   return processQueue.setPrefixStemFilenameWithSongName(value)
+}
+
+async function handleSetPreserveOriginalAudio(event, value) {
+  return processQueue.setPreserveOriginalAudio(value)
 }
 
 async function handleGetOutputFormat() {
@@ -303,10 +311,12 @@ function main() {
     ipcMain.handle('getModelName', handleGetModelName)
     ipcMain.handle('getLocalFileOutputToContainingDir', handleGetLocalFileOutputToContainingDir)
     ipcMain.handle('getPrefixStemFilenameWithSongName', handleGetPrefixStemFilenameWithSongName)
+    ipcMain.handle('getPreserveOriginalAudio', handleGetPreserveOriginalAudio)
     ipcMain.handle('browseOutputPath', handleBrowseOutputPath)
     ipcMain.handle('setModelName', handleSetModelName)
     ipcMain.handle('setLocalFileOutputToContainingDir', handleSetLocalFileOutputToContainingDir)
     ipcMain.handle('setPrefixStemFilenameWithSongName', handleSetPrefixStemFilenameWithSongName)
+    ipcMain.handle('setPreserveOriginalAudio', handleSetPreserveOriginalAudio)
     ipcMain.handle('getOutputFormat', handleGetOutputFormat)
     ipcMain.handle('setOutputFormat', handleSetOutputFormat)
     ipcMain.handle('getPyTorchBackend', handleGetPyTorchBackend)
