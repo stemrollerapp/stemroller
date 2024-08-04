@@ -1,5 +1,4 @@
 import process from 'process'
-import util from 'util'
 import fs from 'fs'
 import fsPromises from 'fs/promises'
 import path from 'path'
@@ -99,6 +98,22 @@ async function main() {
       path.join('anyos-extra-files', 'Models', 'htdemucs_ft.yaml'),
     ],
     [
+      'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th',
+      path.join('anyos-extra-files', 'Models', '955717e8-8726e21a.th'),
+    ],
+    [
+      'https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/remote/htdemucs.yaml',
+      path.join('anyos-extra-files', 'Models', 'htdemucs.yaml'),
+    ],
+    [
+      'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th',
+      path.join('anyos-extra-files', 'Models', '5c90dfd2-34c22ccb.th'),
+    ],
+    [
+      'https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/remote/htdemucs_6s.yaml',
+      path.join('anyos-extra-files', 'Models', 'htdemucs_6s.yaml'),
+    ],
+    [
       `https://github.com/stemrollerapp/demucs-cxfreeze/releases/download/release-26a2baeb0058444b3cf87028d9df721d37c78dfb/demucs-cxfreeze-${winOrMac}${cudaSuffix}.${demucsZipOr7z}`,
       path.join(
         `${winOrMac}-extra-files`,
@@ -176,7 +191,7 @@ async function main() {
         `${winOrMac}-extra-files`,
         'ThirdPartyApps',
         'ffmpeg',
-        'ffmpeg-7.0.1-essentials_build'
+        'ffmpeg-7.0.2-essentials_build'
       )
     )
   } else if (process.platform === 'darwin') {

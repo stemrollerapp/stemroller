@@ -14,7 +14,7 @@ let statusUpdateCallback = null,
 let curItems = [],
   curChildProcess = null,
   curYtdlAbortController = null
-let curProgressStemIdx = 0
+let curProgressFtStemIdx = null
 
 function getPathToThirdPartyApps() {
   if (process.env.NODE_ENV === 'dev') {
@@ -72,7 +72,6 @@ if (PATH_TO_THIRD_PARTY_APPS) {
   CHILD_PROCESS_ENV.PATH =
     PATH_TO_DEMUCS + (process.platform === 'win32' ? ';' : ':') + PATH_TO_FFMPEG
 }
-const DEMUCS_MODEL_NAME = 'htdemucs_ft'
 const TMP_PREFIX = 'StemRoller-'
 
 function getJobCount() {
@@ -98,38 +97,45 @@ function killCurChildProcess() {
     }
     curChildProcess = null
   }
-
-  curProgressStemIdx = 0
 }
 
-function updateProgress(videoId, data) {
+function updateProgressRaw(videoId, progress) {
+  let mainWindow = BrowserWindow.getAllWindows()[0]
+  if (!mainWindow) {
+    return
+  }
+  mainWindow.webContents.send('videoStatusUpdate', {
+    videoId,
+    status: {
+      step: 'processing',
+      progress,
+    },
+  })
+}
+
+function updateDemucsProgress(videoId, data) {
   // Check if the output contains the progress update
   const progressMatch = data.toString().match(/\r\s+\d+%\|/)
   if (progressMatch) {
-    const progress = parseInt(progressMatch)
-    if (progress === 0) {
-      ++curProgressStemIdx
+    let progress = parseInt(progressMatch)
+    if (isNaN(progress)) {
+      return
     }
-    // Find the renderer window and send the update
-    let mainWindow = BrowserWindow.getAllWindows()[0]
-    if (!isNaN(progress) && mainWindow) {
-      mainWindow.webContents.send('videoStatusUpdate', {
-        videoId,
-        status: {
-          step: 'processing',
-          progress,
-          stemIdx: curProgressStemIdx,
-        },
-      })
+    if (curProgressFtStemIdx !== null && progress === 0) {
+      ++curProgressFtStemIdx
     }
+    progress /= 100
+    updateProgressRaw(
+      videoId,
+      (curProgressFtStemIdx === null ? progress : (curProgressFtStemIdx - 1) / 4 + progress / 4) *
+        0.95
+    )
   }
 }
 
-function spawnAndWait(videoId, cwd, command, args) {
+function spawnAndWait(videoId, cwd, command, args, isDemucs, isHybrid) {
   return new Promise((resolve, reject) => {
     killCurChildProcess()
-
-    curProgressStemIdx = 0
 
     CHILD_PROCESS_ENV.LANG = `${(app.getSystemLocale() || 'en-US').replace('-', '_')}.UTF-8` // Set here instead of when CHILD_PROCESS_ENV defined, because app must be ready before we can read the system locale
     curChildProcess = childProcess.spawn(command, args, {
@@ -143,8 +149,10 @@ function spawnAndWait(videoId, cwd, command, args) {
 
     curChildProcess.stderr.on('data', (data) => {
       console.log(`child stderr:\n${data}`)
-      // For some reason the progress displays in stderr instead of stdout
-      updateProgress(videoId, data)
+      if (isDemucs) {
+        // For some reason the progress displays in stderr instead of stdout
+        updateDemucsProgress(videoId, data)
+      }
     })
 
     curChildProcess.on('error', (error) => {
@@ -188,6 +196,19 @@ async function findDemucsOutputDir(basePath) {
   throw new Error('Unable to find Demucs output directory')
 }
 
+async function listDemucsOutputFiles(basePath) {
+  const files = []
+  const entries = await fs.readdir(basePath, {
+    withFileTypes: true,
+  })
+  for (const entry of entries) {
+    if (entry.isFile()) {
+      files.push(path.join(basePath, entry.name))
+    }
+  }
+  return files
+}
+
 async function ensureFileExists(path) {
   try {
     await fs.access(path)
@@ -197,17 +218,51 @@ async function ensureFileExists(path) {
   }
 }
 
-async function ensureDemucsPathsExist(paths) {
-  for (const i in paths) {
-    if (!ensureFileExists(paths[i])) {
-      console.trace(`File "${paths[i]}" does not exist`)
-      return false
+async function convertDemucsFiles({ videoId, tmpDir, filesList, filetype, compressionArgs }) {
+  console.log(`Converting files to format "${filetype}"`)
+
+  const result = []
+  for (const oldFilename of filesList) {
+    const parsedOldFilename = path.parse(oldFilename)
+    const newFilename = `${path.join(parsedOldFilename.dir, parsedOldFilename.name)}.${filetype}`
+
+    await spawnAndWait(
+      videoId,
+      tmpDir,
+      FFMPEG_EXE_NAME,
+      ['-i', oldFilename, ...compressionArgs, newFilename],
+      false
+    )
+
+    const success = await ensureFileExists(newFilename)
+    if (!success) {
+      throw new Error(`Unable to access converted file "${newFilename}" - ffmpeg probably failed`)
     }
+
+    result.push(newFilename)
   }
-  return true
+
+  return result
+}
+
+function getFfmpegCompressionArguments(filetype) {
+  if (filetype === 'mp3') {
+    return ['-q:a', '0']
+  } else if (filetype === 'flac') {
+    return ['-compression_level', '5']
+  } else if (filetype === 'wav') {
+    return []
+  }
+  throw new Error(`Unrecognized filetype: ${filetype}`)
 }
 
 async function _processVideo(video, tmpDir) {
+  const demucsModelName = module.exports.getModelName()
+  const demucsStemsFiletype = module.exports.getOutputFormat()
+  const compressionArgs = getFfmpegCompressionArguments(demucsStemsFiletype)
+  const needsPrefix = module.exports.getPrefixStemFilenameWithSongName()
+  const needsOriginal = module.exports.getPreserveOriginalAudio()
+
   const beginTime = Date.now()
   console.log(`BEGIN downloading/processing video "${video.videoId}" - "${video.title}"`)
   setVideoStatusAndPath(video.videoId, { step: 'downloading' }, null)
@@ -226,20 +281,25 @@ async function _processVideo(video, tmpDir) {
     throw new Error(`Invalid mediaSource: ${video.mediaSource}`)
   }
 
+  const outputFolderName =
+    video.mediaSource === 'youtube'
+      ? sanitizeFilename(`${video.title}-${video.videoId}`)
+      : sanitizeFilename(video.title)
+  const outputFilenamesPrefix = needsPrefix ? `${outputFolderName} - ` : ''
+
   setVideoStatusAndPath(
     video.videoId,
     {
       step: 'processing',
       progress: 0,
-      stemIdx: 0,
     },
     null
   )
   const jobCount = getJobCount()
   console.log(
-    `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
+    `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${demucsModelName}"...`
   )
-  const demucsExeArgs = [mediaPath, '-n', DEMUCS_MODEL_NAME, '-j', jobCount]
+  const demucsExeArgs = [mediaPath, '-n', demucsModelName, '-j', jobCount]
   if (module.exports.getPyTorchBackend() === 'cpu') {
     console.log('Running with "-d cpu" to force CPU instead of CUDA')
     demucsExeArgs.push('-d', 'cpu')
@@ -249,54 +309,86 @@ async function _processVideo(video, tmpDir) {
     demucsExeArgs.push('-d', 'mps')
   }
 
-  const demucsStemsFiletype = module.exports.getOutputFormat()
-  if (demucsStemsFiletype === 'mp3') {
-    demucsExeArgs.push('--mp3')
-  }
   if (PATH_TO_MODELS) {
     demucsExeArgs.push('--repo', PATH_TO_MODELS)
   }
-  await spawnAndWait(video.videoId, tmpDir, DEMUCS_EXE_NAME, demucsExeArgs)
-
-  const demucsBasePath = await findDemucsOutputDir(
-    path.join(tmpDir, 'separated', DEMUCS_MODEL_NAME)
-  )
-  const demucsPaths = {
-    bass: path.join(demucsBasePath, 'bass.' + demucsStemsFiletype),
-    drums: path.join(demucsBasePath, 'drums.' + demucsStemsFiletype),
-    other: path.join(demucsBasePath, 'other.' + demucsStemsFiletype),
-    vocals: path.join(demucsBasePath, 'vocals.' + demucsStemsFiletype),
+  if (demucsModelName.indexOf('_ft') >= 0) {
+    curProgressFtStemIdx = 0
+  } else {
+    curProgressFtStemIdx = null
   }
+  await spawnAndWait(video.videoId, tmpDir, DEMUCS_EXE_NAME, demucsExeArgs, true)
+  curProgressFtStemIdx = null
+  updateProgressRaw(video.videoId, 0.95)
 
-  const demucsSuccess = await ensureDemucsPathsExist(demucsPaths)
-  if (!demucsSuccess) {
-    throw new Error('Unable to access output stems - Demucs probably failed')
+  const demucsBasePath = await findDemucsOutputDir(path.join(tmpDir, 'separated', demucsModelName))
+  const demucsWavFilesList = await listDemucsOutputFiles(demucsBasePath)
+  if (demucsWavFilesList.length === 0) {
+    throw new Error('No .wav output stems written - Demucs probably failed')
   }
+  const demucsConvertedFilesList =
+    demucsStemsFiletype === 'wav'
+      ? demucsWavFilesList
+      : await convertDemucsFiles({
+          videoId: video.videoId,
+          tmpDir,
+          filesList: demucsWavFilesList,
+          filetype: demucsStemsFiletype,
+          compressionArgs,
+        })
+  updateProgressRaw(video.videoId, 0.97)
 
-  const instrumentalPath = path.join(tmpDir, 'instrumental.' + demucsStemsFiletype)
+  const instrumentalPath = path.join(tmpDir, `instrumental.${demucsStemsFiletype}`)
   console.log(`Mixing down instrumental stems to "${instrumentalPath}"`)
-  await spawnAndWait(video.videoId, tmpDir, FFMPEG_EXE_NAME, [
-    '-i',
-    demucsPaths.bass,
-    '-i',
-    demucsPaths.drums,
-    '-i',
-    demucsPaths.other,
-    '-filter_complex',
-    'amix=inputs=3:normalize=0',
-    instrumentalPath,
-  ])
+  const ffmpegInstrumentalSourceFiles = []
+  for (const filename of demucsWavFilesList) {
+    const baseName = path.parse(filename).name
+    if (baseName === 'vocals') {
+      continue
+    }
+    ffmpegInstrumentalSourceFiles.push('-i')
+    ffmpegInstrumentalSourceFiles.push(filename)
+  }
+  await spawnAndWait(
+    video.videoId,
+    tmpDir,
+    FFMPEG_EXE_NAME,
+    [
+      ...ffmpegInstrumentalSourceFiles,
+      ...compressionArgs,
+      '-filter_complex',
+      `amix=inputs=${ffmpegInstrumentalSourceFiles.length / 2}:normalize=0`,
+      instrumentalPath,
+    ],
+    false
+  )
   const instrumentalSuccess = await ensureFileExists(instrumentalPath)
   if (!instrumentalSuccess) {
     throw new Error(
       `Unable to access instrumental file "${instrumentalPath}" - ffmpeg probably failed`
     )
   }
+  updateProgressRaw(video.videoId, 0.98)
 
-  const outputFolderName =
-    video.mediaSource === 'youtube'
-      ? sanitizeFilename(`${video.title}-${video.videoId}`)
-      : sanitizeFilename(video.title)
+  let originalOutPath = null
+  if (needsOriginal) {
+    originalOutPath = path.join(tmpDir, `original.${demucsStemsFiletype}`)
+    await spawnAndWait(
+      video.videoId,
+      tmpDir,
+      FFMPEG_EXE_NAME,
+      ['-i', mediaPath, ...compressionArgs, originalOutPath],
+      false
+    )
+    const originalSuccess = await ensureFileExists(originalOutPath)
+    if (!originalSuccess) {
+      throw new Error(
+        `Unable to access instrumental file "${originalOutPath}" - ffmpeg probably failed`
+      )
+    }
+  }
+  updateProgressRaw(video.videoId, 0.99)
+
   const outputBasePathContainingFolder =
     video.mediaSource === 'local' && module.exports.getLocalFileOutputToContainingDir()
       ? path.dirname(mediaPath)
@@ -304,18 +396,24 @@ async function _processVideo(video, tmpDir) {
   const outputBasePath = path.join(outputBasePathContainingFolder, outputFolderName)
   await fs.mkdir(outputBasePath, { recursive: true })
   console.log(`Copying all stems to "${outputBasePath}"`)
-  const outputPaths = {
-    bass: path.join(outputBasePath, 'bass.' + demucsStemsFiletype),
-    drums: path.join(outputBasePath, 'drums.' + demucsStemsFiletype),
-    other: path.join(outputBasePath, 'other.' + demucsStemsFiletype),
-    vocals: path.join(outputBasePath, 'vocals.' + demucsStemsFiletype),
-    instrumental: path.join(outputBasePath, 'instrumental.' + demucsStemsFiletype),
+  for (const filename of demucsConvertedFilesList) {
+    const baseName = path.parse(filename).name
+    const outputPath = path.join(
+      outputBasePath,
+      `${outputFilenamesPrefix}${baseName}.${demucsStemsFiletype}`
+    )
+    await fs.copyFile(filename, outputPath)
   }
-
-  for (const i in demucsPaths) {
-    await fs.copyFile(demucsPaths[i], outputPaths[i])
+  await fs.copyFile(
+    instrumentalPath,
+    path.join(outputBasePath, `${outputFilenamesPrefix}instrumental.${demucsStemsFiletype}`)
+  )
+  if (needsOriginal) {
+    await fs.copyFile(
+      originalOutPath,
+      path.join(outputBasePath, `${outputFilenamesPrefix}original.${demucsStemsFiletype}`)
+    )
   }
-  await fs.copyFile(instrumentalPath, outputPaths.instrumental)
 
   const elapsedSeconds = (Date.now() - beginTime) * 0.001
   console.log(
@@ -350,6 +448,8 @@ async function processVideo(video) {
       setVideoStatusAndPath(video.videoId, { step: 'error' }, null)
     }
   } finally {
+    curProgressFtStemIdx = null
+
     try {
       await fs.rm(tmpDir, {
         recursive: true,
@@ -472,16 +572,46 @@ module.exports.getOutputPath = () => {
   return path.join(os.homedir(), 'Music', 'StemRoller')
 }
 
+module.exports.getModelName = () => {
+  if (electronStore) {
+    const modelName = electronStore.get('modelName')
+    if (modelName) {
+      return modelName
+    }
+  }
+  return 'htdemucs'
+}
+
 module.exports.getLocalFileOutputToContainingDir = () => {
   return electronStore.get('localFileOutputToContainingDir') || false
+}
+
+module.exports.getPrefixStemFilenameWithSongName = () => {
+  return electronStore.get('prefixStemFilenameWithSongName') || false
+}
+
+module.exports.getPreserveOriginalAudio = () => {
+  return electronStore.get('preserveOriginalAudio') || false
 }
 
 module.exports.setOutputPath = (outputPath) => {
   electronStore.set('outputPath', outputPath)
 }
 
+module.exports.setModelName = (name) => {
+  electronStore.set('modelName', name)
+}
+
 module.exports.setLocalFileOutputToContainingDir = (value) => {
   electronStore.set('localFileOutputToContainingDir', value)
+}
+
+module.exports.setPrefixStemFilenameWithSongName = (value) => {
+  electronStore.set('prefixStemFilenameWithSongName', value)
+}
+
+module.exports.setPreserveOriginalAudio = (value) => {
+  electronStore.set('preserveOriginalAudio', value)
 }
 
 module.exports.getOutputFormat = () => {
