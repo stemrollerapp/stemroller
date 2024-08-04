@@ -472,16 +472,38 @@ module.exports.getOutputPath = () => {
   return path.join(os.homedir(), 'Music', 'StemRoller')
 }
 
+module.exports.getModelName = () => {
+  if (electronStore) {
+    const modelName = electronStore.get('modelName')
+    if (modelName) {
+      return modelName
+    }
+  }
+  return 'htdemucs_ft'
+}
+
 module.exports.getLocalFileOutputToContainingDir = () => {
   return electronStore.get('localFileOutputToContainingDir') || false
+}
+
+module.exports.getPrefixStemFilenameWithSongName = () => {
+  return electronStore.get('prefixStemFilenameWithSongName') || false
 }
 
 module.exports.setOutputPath = (outputPath) => {
   electronStore.set('outputPath', outputPath)
 }
 
+module.exports.setModelName = (name) => {
+  electronStore.set('modelName', name)
+}
+
 module.exports.setLocalFileOutputToContainingDir = (value) => {
   electronStore.set('localFileOutputToContainingDir', value)
+}
+
+module.exports.setPrefixStemFilenameWithSongName = (value) => {
+  electronStore.set('prefixStemFilenameWithSongName', value)
 }
 
 module.exports.getOutputFormat = () => {

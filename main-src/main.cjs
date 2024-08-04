@@ -128,8 +128,16 @@ async function handleGetOutputPath() {
   return processQueue.getOutputPath()
 }
 
+async function handleGetModelName() {
+  return processQueue.getModelName()
+}
+
 async function handleGetLocalFileOutputToContainingDir() {
   return processQueue.getLocalFileOutputToContainingDir()
+}
+
+async function handleGetPrefixStemFilenameWithSongName() {
+  return processQueue.getPrefixStemFilenameWithSongName()
 }
 
 async function handleBrowseOutputPath() {
@@ -144,8 +152,16 @@ async function handleBrowseOutputPath() {
   return null
 }
 
+async function handleSetModelName(event, name) {
+  return processQueue.setOutputFormat(name)
+}
+
 async function handleSetLocalFileOutputToContainingDir(event, value) {
   return processQueue.setLocalFileOutputToContainingDir(value)
+}
+
+async function handleSetPrefixStemFilenameWithSongName(event, value) {
+  return processQueue.setPrefixStemFilenameWithSongName(value)
 }
 
 async function handleGetOutputFormat() {
@@ -284,9 +300,13 @@ function main() {
     ipcMain.handle('openChat', handleOpenChat)
     ipcMain.handle('disableDonatePopup', handleDisableDonatePopup)
     ipcMain.handle('getOutputPath', handleGetOutputPath)
+    ipcMain.handle('getModelName', handleGetModelName)
     ipcMain.handle('getLocalFileOutputToContainingDir', handleGetLocalFileOutputToContainingDir)
+    ipcMain.handle('getPrefixStemFilenameWithSongName', handleGetPrefixStemFilenameWithSongName)
     ipcMain.handle('browseOutputPath', handleBrowseOutputPath)
+    ipcMain.handle('setModelName', handleSetModelName)
     ipcMain.handle('setLocalFileOutputToContainingDir', handleSetLocalFileOutputToContainingDir)
+    ipcMain.handle('setPrefixStemFilenameWithSongName', handleSetPrefixStemFilenameWithSongName)
     ipcMain.handle('getOutputFormat', handleGetOutputFormat)
     ipcMain.handle('setOutputFormat', handleSetOutputFormat)
     ipcMain.handle('getPyTorchBackend', handleGetPyTorchBackend)

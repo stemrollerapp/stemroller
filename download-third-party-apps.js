@@ -78,6 +78,34 @@ async function moveDirChildrenUpAndDeleteDir(dirName) {
 async function main() {
   const downloads = [
     [
+      'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th',
+      path.join('anyos-extra-files', 'Models', 'f7e0c4bc-ba3fe64a.th'),
+    ],
+    [
+      'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/d12395a8-e57c48e6.th',
+      path.join('anyos-extra-files', 'Models', 'd12395a8-e57c48e6.th'),
+    ],
+    [
+      'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/92cfc3b6-ef3bcb9c.th',
+      path.join('anyos-extra-files', 'Models', '92cfc3b6-ef3bcb9c.th'),
+    ],
+    [
+      'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/04573f0d-f3cf25b2.th',
+      path.join('anyos-extra-files', 'Models', '04573f0d-f3cf25b2.th'),
+    ],
+    [
+      'https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/remote/htdemucs_ft.yaml',
+      path.join('anyos-extra-files', 'Models', 'htdemucs_ft.yaml'),
+    ],
+    [
+      'https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th',
+      path.join('anyos-extra-files', 'Models', '5c90dfd2-34c22ccb.th'),
+    ],
+    [
+      'https://raw.githubusercontent.com/facebookresearch/demucs/main/demucs/remote/htdemucs_6s.yaml',
+      path.join('anyos-extra-files', 'Models', 'htdemucs_6s.yaml'),
+    ],
+    [
       `https://github.com/stemrollerapp/demucs-cxfreeze/releases/download/release-26a2baeb0058444b3cf87028d9df721d37c78dfb/demucs-cxfreeze-${winOrMac}${cudaSuffix}.${demucsZipOr7z}`,
       path.join(
         `${winOrMac}-extra-files`,

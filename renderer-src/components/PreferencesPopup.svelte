@@ -9,8 +9,10 @@
 
   let pyTorchBackend = null
   let outputPath = null
+  let modelName = null
   let outputFormat = null
   let localFileOutputToContainingDir = null
+  let prefixStemFilenameWithSongName = null
 
   async function handleBrowseStems() {
     const newOutputPath = await window.browseOutputPath()
@@ -22,19 +24,27 @@
   onMount(async () => {
     pyTorchBackend = await window.getPyTorchBackend()
     outputPath = await window.getOutputPath()
+    modelName = await window.getModelName()
     outputFormat = await window.getOutputFormat()
     localFileOutputToContainingDir = await window.getLocalFileOutputToContainingDir()
+    prefixStemFilenameWithSongName = await window.getPrefixStemFilenameWithSongName()
   })
 
   $: {
     if (pyTorchBackend) {
       window.setPyTorchBackend(pyTorchBackend)
     }
+    if (modelName) {
+      window.setModelName(modelName)
+    }
     if (outputFormat) {
       window.setOutputFormat(outputFormat)
     }
     if (localFileOutputToContainingDir !== null) {
       window.setLocalFileOutputToContainingDir(localFileOutputToContainingDir)
+    }
+    if (prefixStemFilenameWithSongName !== null) {
+      window.setPrefixStemFilenameWithSongName(prefixStemFilenameWithSongName)
     }
   }
 </script>
@@ -80,6 +90,19 @@
     >
   </div>
 
+  <div class="space-x-2 flex flex-row items-center justify-start mb-2">
+    <input
+      id="checkboxPrefixStemFilenameWithSongName"
+      type="checkbox"
+      class="w-4 h-4 grow-0 shrink-0"
+      bind:checked={prefixStemFilenameWithSongName}
+    />
+
+    <label for="checkboxPrefixStemFilenameWithSongName" class="grow-0 shrink-0"
+      >Prefix stem name with song name</label
+    >
+  </div>
+
   <div class="text-lg font-bold mb-1">Stems output format</div>
 
   <select
@@ -87,7 +110,20 @@
     bind:value={outputFormat}
   >
     <option value="wav" class="bg-slate-900 text-slate-300 px-2 py-1">WAV</option>
+    <option value="flac" class="bg-slate-900 text-slate-300 px-2 py-1">FLAC</option>
     <option value="mp3" class="bg-slate-900 text-slate-300 px-2 py-1">MP3</option>
+  </select>
+
+  <div class="text-lg font-bold mb-1">Demucs model</div>
+
+  <select
+    class="border-solid border border-slate-700 bg-slate-900 text-slate-300 focus:outline-none focus:ring focus:ring-cyan-300 px-2 py-1 mb-2 rounded-md"
+    bind:value={modelName}
+  >
+    <option value="htdemucs_ft" class="bg-slate-900 text-slate-300 px-2 py-1"
+      >4-channel Finetuned</option
+    >
+    <option value="htdemucs_6s" class="bg-slate-900 text-slate-300 px-2 py-1">6-channel</option>
   </select>
 
   <div class="text-lg font-bold mb-1">Backend</div>

@@ -28,12 +28,22 @@ contextBridge.exposeInMainWorld('disableDonatePopup', () =>
   ipcRenderer.invoke('disableDonatePopup')
 )
 contextBridge.exposeInMainWorld('getOutputPath', () => ipcRenderer.invoke('getOutputPath'))
+contextBridge.exposeInMainWorld('getModelName', () => ipcRenderer.invoke('getModelName'))
 contextBridge.exposeInMainWorld('getLocalFileOutputToContainingDir', () =>
   ipcRenderer.invoke('getLocalFileOutputToContainingDir')
 )
+contextBridge.exposeInMainWorld('getPrefixStemFilenameWithSongName', () =>
+  ipcRenderer.invoke('getPrefixStemFilenameWithSongName')
+)
 contextBridge.exposeInMainWorld('browseOutputPath', () => ipcRenderer.invoke('browseOutputPath'))
+contextBridge.exposeInMainWorld('setModelName', (value) =>
+  ipcRenderer.invoke('setModelName', value)
+)
 contextBridge.exposeInMainWorld('setLocalFileOutputToContainingDir', (value) =>
   ipcRenderer.invoke('setLocalFileOutputToContainingDir', value)
+)
+contextBridge.exposeInMainWorld('setPrefixStemFilenameWithSongName', (value) =>
+  ipcRenderer.invoke('setPrefixStemFilenameWithSongName', value)
 )
 contextBridge.exposeInMainWorld('getOutputFormat', () => ipcRenderer.invoke('getOutputFormat'))
 contextBridge.exposeInMainWorld('setOutputFormat', (outputFormat) =>
