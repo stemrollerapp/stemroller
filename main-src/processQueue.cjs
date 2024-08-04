@@ -97,8 +97,20 @@ function killCurChildProcess() {
     }
     curChildProcess = null
   }
+}
 
-  curProgressFtStemIdx = null
+function updateProgressRaw(videoId, progress) {
+  let mainWindow = BrowserWindow.getAllWindows()[0]
+  if (!mainWindow) {
+    return
+  }
+  mainWindow.webContents.send('videoStatusUpdate', {
+    videoId,
+    status: {
+      step: 'processing',
+      progress,
+    },
+  })
 }
 
 function updateDemucsProgress(videoId, data) {
@@ -113,24 +125,15 @@ function updateDemucsProgress(videoId, data) {
       ++curProgressFtStemIdx
     }
     progress /= 100
-    // Find the renderer window and send the update
-    let mainWindow = BrowserWindow.getAllWindows()[0]
-    if (mainWindow) {
-      mainWindow.webContents.send('videoStatusUpdate', {
-        videoId,
-        status: {
-          step: 'processing',
-          progress:
-            (curProgressFtStemIdx === null
-              ? progress
-              : (curProgressFtStemIdx - 1) / 4 + progress / 4) * 0.95, // * 0.95 because of conversion step at end
-        },
-      })
-    }
+    updateProgressRaw(
+      videoId,
+      (curProgressFtStemIdx === null ? progress : (curProgressFtStemIdx - 1) / 4 + progress / 4) *
+        0.95
+    )
   }
 }
 
-function spawnAndWait(videoId, cwd, command, args, isDemucs) {
+function spawnAndWait(videoId, cwd, command, args, isDemucs, isHybrid) {
   return new Promise((resolve, reject) => {
     killCurChildProcess()
 
@@ -316,6 +319,7 @@ async function _processVideo(video, tmpDir) {
   }
   await spawnAndWait(video.videoId, tmpDir, DEMUCS_EXE_NAME, demucsExeArgs, true)
   curProgressFtStemIdx = null
+  updateProgressRaw(video.videoId, 0.95)
 
   const demucsBasePath = await findDemucsOutputDir(path.join(tmpDir, 'separated', demucsModelName))
   const demucsWavFilesList = await listDemucsOutputFiles(demucsBasePath)
@@ -332,6 +336,7 @@ async function _processVideo(video, tmpDir) {
           filetype: demucsStemsFiletype,
           compressionArgs,
         })
+  updateProgressRaw(video.videoId, 0.97)
 
   const instrumentalPath = path.join(tmpDir, `instrumental.${demucsStemsFiletype}`)
   console.log(`Mixing down instrumental stems to "${instrumentalPath}"`)
@@ -363,6 +368,7 @@ async function _processVideo(video, tmpDir) {
       `Unable to access instrumental file "${instrumentalPath}" - ffmpeg probably failed`
     )
   }
+  updateProgressRaw(video.videoId, 0.98)
 
   let originalOutPath = null
   if (needsOriginal) {
@@ -374,7 +380,14 @@ async function _processVideo(video, tmpDir) {
       ['-i', mediaPath, ...compressionArgs, originalOutPath],
       false
     )
+    const originalSuccess = await ensureFileExists(originalOutPath)
+    if (!originalSuccess) {
+      throw new Error(
+        `Unable to access instrumental file "${originalOutPath}" - ffmpeg probably failed`
+      )
+    }
   }
+  updateProgressRaw(video.videoId, 0.99)
 
   const outputBasePathContainingFolder =
     video.mediaSource === 'local' && module.exports.getLocalFileOutputToContainingDir()
@@ -435,6 +448,8 @@ async function processVideo(video) {
       setVideoStatusAndPath(video.videoId, { step: 'error' }, null)
     }
   } finally {
+    curProgressFtStemIdx = null
+
     try {
       await fs.rm(tmpDir, {
         recursive: true,

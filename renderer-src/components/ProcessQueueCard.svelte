@@ -95,7 +95,7 @@
             Remove
           {/if}
         {:else if status.step === 'processing'}
-          Processing ({Math.floor(status.progress)}%)
+          Processing ({Math.floor(status.progress * 100)}%)
         {:else if status.step === 'downloading'}
           Downloading
         {:else if status.step === 'queued'}
