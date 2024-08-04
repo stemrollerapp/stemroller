@@ -72,7 +72,6 @@ if (PATH_TO_THIRD_PARTY_APPS) {
   CHILD_PROCESS_ENV.PATH =
     PATH_TO_DEMUCS + (process.platform === 'win32' ? ';' : ':') + PATH_TO_FFMPEG
 }
-const DEMUCS_MODEL_NAME = 'htdemucs_ft'
 const TMP_PREFIX = 'StemRoller-'
 
 function getJobCount() {
@@ -188,6 +187,19 @@ async function findDemucsOutputDir(basePath) {
   throw new Error('Unable to find Demucs output directory')
 }
 
+async function listDemucsOutputFiles(basePath) {
+  const files = []
+  const entries = await fs.readdir(basePath, {
+    withFileTypes: true,
+  })
+  for (const entry of entries) {
+    if (entry.isFile()) {
+      files.push(path.join(basePath, entry.name))
+    }
+  }
+  return files
+}
+
 async function ensureFileExists(path) {
   try {
     await fs.access(path)
@@ -197,17 +209,49 @@ async function ensureFileExists(path) {
   }
 }
 
-async function ensureDemucsPathsExist(paths) {
-  for (const i in paths) {
-    if (!ensureFileExists(paths[i])) {
-      console.trace(`File "${paths[i]}" does not exist`)
-      return false
+async function convertDemucsFiles({ videoId, tmpDir, filesList, filetype, compressionArgs }) {
+  console.log(`Converting files to format "${filetype}"`)
+
+  const result = []
+  for (const oldFilename of filesList) {
+    const parsedOldFilename = path.parse(oldFilename)
+    const newFilename = `${path.join(parsedOldFilename.dir, parsedOldFilename.name)}.${filetype}`
+
+    await spawnAndWait(videoId, tmpDir, FFMPEG_EXE_NAME, [
+      '-i',
+      oldFilename,
+      ...compressionArgs,
+      newFilename,
+    ])
+
+    const success = await ensureFileExists(newFilename)
+    if (!success) {
+      throw new Error(`Unable to access converted file "${newFilename}" - ffmpeg probably failed`)
     }
+
+    result.push(newFilename)
   }
-  return true
+
+  return result
+}
+
+function getFfmpegCompressionArguments(filetype) {
+  if (filetype === 'mp3') {
+    return ['-q:a', '0']
+  } else if (filetype === 'flac') {
+    return ['-compression_level', '5']
+  } else if (filetype === 'wav') {
+    return []
+  }
+  throw new Error(`Unrecognized filetype: ${filetype}`)
 }
 
 async function _processVideo(video, tmpDir) {
+  const demucsModelName = module.exports.getModelName()
+  const demucsStemsFiletype = module.exports.getOutputFormat()
+  const compressionArgs = getFfmpegCompressionArguments(demucsStemsFiletype)
+  const needsPrefix = module.exports.getPrefixStemFilenameWithSongName()
+
   const beginTime = Date.now()
   console.log(`BEGIN downloading/processing video "${video.videoId}" - "${video.title}"`)
   setVideoStatusAndPath(video.videoId, { step: 'downloading' }, null)
@@ -226,6 +270,12 @@ async function _processVideo(video, tmpDir) {
     throw new Error(`Invalid mediaSource: ${video.mediaSource}`)
   }
 
+  const outputFolderName =
+    video.mediaSource === 'youtube'
+      ? sanitizeFilename(`${video.title}-${video.videoId}`)
+      : sanitizeFilename(video.title)
+  const outputFilenamesPrefix = needsPrefix ? `${outputFolderName} - ` : ''
+
   setVideoStatusAndPath(
     video.videoId,
     {
@@ -237,9 +287,9 @@ async function _processVideo(video, tmpDir) {
   )
   const jobCount = getJobCount()
   console.log(
-    `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${DEMUCS_MODEL_NAME}"...`
+    `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${demucsModelName}"...`
   )
-  const demucsExeArgs = [mediaPath, '-n', DEMUCS_MODEL_NAME, '-j', jobCount]
+  const demucsExeArgs = [mediaPath, '-n', demucsModelName, '-j', jobCount]
   if (module.exports.getPyTorchBackend() === 'cpu') {
     console.log('Running with "-d cpu" to force CPU instead of CUDA')
     demucsExeArgs.push('-d', 'cpu')
@@ -249,41 +299,43 @@ async function _processVideo(video, tmpDir) {
     demucsExeArgs.push('-d', 'mps')
   }
 
-  const demucsStemsFiletype = module.exports.getOutputFormat()
-  if (demucsStemsFiletype === 'mp3') {
-    demucsExeArgs.push('--mp3')
-  }
   if (PATH_TO_MODELS) {
     demucsExeArgs.push('--repo', PATH_TO_MODELS)
   }
   await spawnAndWait(video.videoId, tmpDir, DEMUCS_EXE_NAME, demucsExeArgs)
 
-  const demucsBasePath = await findDemucsOutputDir(
-    path.join(tmpDir, 'separated', DEMUCS_MODEL_NAME)
-  )
-  const demucsPaths = {
-    bass: path.join(demucsBasePath, 'bass.' + demucsStemsFiletype),
-    drums: path.join(demucsBasePath, 'drums.' + demucsStemsFiletype),
-    other: path.join(demucsBasePath, 'other.' + demucsStemsFiletype),
-    vocals: path.join(demucsBasePath, 'vocals.' + demucsStemsFiletype),
+  const demucsBasePath = await findDemucsOutputDir(path.join(tmpDir, 'separated', demucsModelName))
+  const demucsWavFilesList = await listDemucsOutputFiles(demucsBasePath)
+  if (demucsWavFilesList.length === 0) {
+    throw new Error('No .wav output stems written - Demucs probably failed')
   }
+  const demucsConvertedFilesList =
+    demucsStemsFiletype === 'wav'
+      ? demucsWavFilesList
+      : await convertDemucsFiles({
+          videoId: video.videoId,
+          tmpDir,
+          filesList: demucsWavFilesList,
+          filetype: demucsStemsFiletype,
+          compressionArgs,
+        })
 
-  const demucsSuccess = await ensureDemucsPathsExist(demucsPaths)
-  if (!demucsSuccess) {
-    throw new Error('Unable to access output stems - Demucs probably failed')
-  }
-
-  const instrumentalPath = path.join(tmpDir, 'instrumental.' + demucsStemsFiletype)
+  const instrumentalPath = path.join(tmpDir, `instrumental.${demucsStemsFiletype}`)
   console.log(`Mixing down instrumental stems to "${instrumentalPath}"`)
+  const ffmpegInstrumentalSourceFiles = []
+  for (const filename of demucsWavFilesList) {
+    const baseName = path.parse(filename).name
+    if (baseName === 'vocals') {
+      continue
+    }
+    ffmpegInstrumentalSourceFiles.push('-i')
+    ffmpegInstrumentalSourceFiles.push(filename)
+  }
   await spawnAndWait(video.videoId, tmpDir, FFMPEG_EXE_NAME, [
-    '-i',
-    demucsPaths.bass,
-    '-i',
-    demucsPaths.drums,
-    '-i',
-    demucsPaths.other,
+    ...ffmpegInstrumentalSourceFiles,
+    ...compressionArgs,
     '-filter_complex',
-    'amix=inputs=3:normalize=0',
+    `amix=inputs=${ffmpegInstrumentalSourceFiles.length / 2}:normalize=0`,
     instrumentalPath,
   ])
   const instrumentalSuccess = await ensureFileExists(instrumentalPath)
@@ -293,10 +345,6 @@ async function _processVideo(video, tmpDir) {
     )
   }
 
-  const outputFolderName =
-    video.mediaSource === 'youtube'
-      ? sanitizeFilename(`${video.title}-${video.videoId}`)
-      : sanitizeFilename(video.title)
   const outputBasePathContainingFolder =
     video.mediaSource === 'local' && module.exports.getLocalFileOutputToContainingDir()
       ? path.dirname(mediaPath)
@@ -304,18 +352,18 @@ async function _processVideo(video, tmpDir) {
   const outputBasePath = path.join(outputBasePathContainingFolder, outputFolderName)
   await fs.mkdir(outputBasePath, { recursive: true })
   console.log(`Copying all stems to "${outputBasePath}"`)
-  const outputPaths = {
-    bass: path.join(outputBasePath, 'bass.' + demucsStemsFiletype),
-    drums: path.join(outputBasePath, 'drums.' + demucsStemsFiletype),
-    other: path.join(outputBasePath, 'other.' + demucsStemsFiletype),
-    vocals: path.join(outputBasePath, 'vocals.' + demucsStemsFiletype),
-    instrumental: path.join(outputBasePath, 'instrumental.' + demucsStemsFiletype),
+  for (const filename of demucsConvertedFilesList) {
+    const baseName = path.parse(filename).name
+    const outputPath = path.join(
+      outputBasePath,
+      `${outputFilenamesPrefix}${baseName}.${demucsStemsFiletype}`
+    )
+    await fs.copyFile(filename, outputPath)
   }
-
-  for (const i in demucsPaths) {
-    await fs.copyFile(demucsPaths[i], outputPaths[i])
-  }
-  await fs.copyFile(instrumentalPath, outputPaths.instrumental)
+  await fs.copyFile(
+    instrumentalPath,
+    path.join(outputBasePath, `${outputFilenamesPrefix}instrumental.${demucsStemsFiletype}`)
+  )
 
   const elapsedSeconds = (Date.now() - beginTime) * 0.001
   console.log(

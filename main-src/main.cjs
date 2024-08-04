@@ -153,7 +153,7 @@ async function handleBrowseOutputPath() {
 }
 
 async function handleSetModelName(event, name) {
-  return processQueue.setOutputFormat(name)
+  return processQueue.setModelName(name)
 }
 
 async function handleSetLocalFileOutputToContainingDir(event, value) {

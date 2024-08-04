@@ -121,9 +121,11 @@
     bind:value={modelName}
   >
     <option value="htdemucs_ft" class="bg-slate-900 text-slate-300 px-2 py-1"
-      >4-channel Finetuned</option
+      >4-channel (Finetuned)</option
     >
-    <option value="htdemucs_6s" class="bg-slate-900 text-slate-300 px-2 py-1">6-channel</option>
+    <option value="htdemucs_6s" class="bg-slate-900 text-slate-300 px-2 py-1"
+      >6-channel (Experimental)</option
+    >
   </select>
 
   <div class="text-lg font-bold mb-1">Backend</div>
