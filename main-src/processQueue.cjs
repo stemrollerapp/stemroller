@@ -145,7 +145,7 @@ function spawnAndWait(videoId, cwd, command, args, isDemucs) {
       console.log(`child stderr:\n${data}`)
       if (isDemucs) {
         // For some reason the progress displays in stderr instead of stdout
-        updateProgress(videoId, data)
+        updateDemucsProgress(videoId, data)
       }
     })
 
