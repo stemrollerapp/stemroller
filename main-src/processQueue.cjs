@@ -579,7 +579,7 @@ module.exports.getModelName = () => {
       return modelName
     }
   }
-  return 'htdemucs_ft'
+  return 'htdemucs'
 }
 
 module.exports.getLocalFileOutputToContainingDir = () => {

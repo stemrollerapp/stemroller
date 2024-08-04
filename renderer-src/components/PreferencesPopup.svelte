@@ -138,10 +138,10 @@
     class="border-solid border border-slate-700 bg-slate-900 text-slate-300 focus:outline-none focus:ring focus:ring-cyan-300 px-2 py-1 mb-2 rounded-md"
     bind:value={modelName}
   >
+    <option value="htdemucs" class="bg-slate-900 text-slate-300 px-2 py-1">4-channel (Fast)</option>
     <option value="htdemucs_ft" class="bg-slate-900 text-slate-300 px-2 py-1"
       >4-channel (Finetuned)</option
     >
-    <option value="htdemucs" class="bg-slate-900 text-slate-300 px-2 py-1">4-channel (Fast)</option>
     <option value="htdemucs_6s" class="bg-slate-900 text-slate-300 px-2 py-1"
       >6-channel (Experimental)</option
     >
