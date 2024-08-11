@@ -1,6 +1,7 @@
 const { app, ipcMain, dialog, shell, Menu, BrowserWindow } = require('electron')
 const fs = require('fs')
 const fsPromises = require('fs/promises')
+const { execSync } = require('child_process')
 const path = require('path')
 const compareVersions = require('compare-versions')
 const fetch = require('electron-fetch').default
@@ -270,9 +271,41 @@ async function checkForUpdates() {
   }
 }
 
-function main() {
-  // No await here because we don't want to slow down application launch time waiting to be able to delete folders...
-  processQueue.deleteTmpFolders()
+async function checkForMsvcRuntime() {
+  if (process.platform !== 'win32') {
+    return true
+  }
+
+  try {
+    // Will throw an error if it cannot find the file
+    execSync('where vcruntime140.dll', {
+      shell: 'cmd.exe',
+      stdio: 'pipe',
+      encoding: 'utf-8',
+    })
+
+    return true
+  } catch (err) {
+    const { response } = await dialog.showMessageBox(null, {
+      type: 'warning',
+      buttons: ['Yes', 'No'],
+      title: 'Please install Visual C++ Redistributable',
+      message:
+        'This application requires the Microsoft Visual C++ Redistributable (x64) to be installed on your device. Would you like to download it now? (Please restart StemRoller once you have finished installing the Visual C++ Redistributable package).',
+    })
+
+    if (response === 0) {
+      await shell.openExternal(
+        'https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version'
+      )
+    }
+
+    return false
+  }
+}
+
+async function main() {
+  await processQueue.deleteTmpFolders()
 
   app.on('second-instance', (event, commandLine, workingDirectory, additionalData) => {
     if (mainWindow) {
@@ -290,7 +323,12 @@ function main() {
     }
   })
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
+    if (!(await checkForMsvcRuntime())) {
+      app.quit()
+      return
+    }
+
     electronStore = new Store()
     processQueue.setElectronStore(electronStore)
 
