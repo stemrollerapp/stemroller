@@ -61,7 +61,7 @@ const PATH_TO_FFMPEG = PATH_TO_THIRD_PARTY_APPS
 const DEMUCS_EXE_NAME = PATH_TO_THIRD_PARTY_APPS ? 'demucs-cxfreeze' : 'demucs'
 const FFMPEG_EXE_NAME = 'ffmpeg'
 const CHILD_PROCESS_ENV = {
-  ... process.env,
+  ...process.env,
   LANG: null, // Will be set when ready to split, since we can only check system locale after `app` is ready
 }
 if (PATH_TO_THIRD_PARTY_APPS) {
