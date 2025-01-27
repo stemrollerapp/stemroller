@@ -25,6 +25,7 @@ npm i -D
 ### Linux (Not officially supported)
 
 Install `ffmpeg` globally using your preferred package manager, and install `demucs` globally with `pip`.
+If you get "Couldn't find appropriate backend" errors, try installing `libsox-dev`.
 
 ## Run in Development Mode
 
