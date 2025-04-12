@@ -97,7 +97,16 @@ module.exports.searchYt = async (query) => {
   const plainResults = []
 
   for (const result of innertubeResults.results) {
-    if (result.type !== 'Video') {
+    if (
+      result.type !== 'Video' ||
+      typeof result.video_id === 'undefined' ||
+      typeof result.title === 'undefined' ||
+      typeof result.title.text === 'undefined' ||
+      typeof result.author === 'undefined' ||
+      typeof result.author.name === 'undefined' ||
+      typeof result.length_text === 'undefined' ||
+      typeof result.length_text.text === 'undefined'
+    ) {
       continue
     }
 
