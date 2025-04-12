@@ -100,7 +100,7 @@
       </p>
 
       <div
-        class={`m-auto max-w-md flex flex-row space-x-2 px-4 py-3 drop-shadow-lg bg-slate-800 text-slate-300 rounded-md border-solid border border-slate-700 transition-opacity ${
+        class={`mx-auto max-w-md flex flex-row space-x-2 px-4 py-3 drop-shadow-lg bg-slate-800 text-slate-300 rounded-md border-solid border border-slate-700 transition-opacity ${
           dndTipVisible ? 'opacity-100' : 'opacity-0'
         }`}
       >

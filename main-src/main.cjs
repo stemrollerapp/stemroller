@@ -3,12 +3,12 @@ const fs = require('fs')
 const fsPromises = require('fs/promises')
 const { execSync } = require('child_process')
 const path = require('path')
-const compareVersions = require('compare-versions')
+const { compareVersions } = require('compare-versions')
 const fetch = require('electron-fetch').default
 const xxhash = require('xxhash-wasm')
 const ytSearch = require('yt-search')
-const serve = require('electron-serve')
-const Store = require('electron-store')
+const serve = require('electron-serve').default
+const Store = require('electron-store').default
 const processQueue = require('./processQueue.cjs')
 
 let electronStore = null

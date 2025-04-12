@@ -64,7 +64,7 @@
 
     <div class="font-bold text-xl grow-0 shrink-0">Preferences</div>
 
-    <div class="w-full grow-1 shrink-1" />
+    <div class="w-full grow-1 shrink-1"></div>
 
     <button class="w-6 h-6 grow-0 shrink-0" on:click={onCloseClick}>
       <XIcon />

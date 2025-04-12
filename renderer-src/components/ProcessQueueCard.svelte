@@ -57,12 +57,21 @@
 </script>
 
 {#if status !== null}
-  <button
-    class="overflow-hidden grow-0 shrink-0 w-60 flex flex-row px-4 p-2 space-x-4 items-center rounded-md text-left bg-slate-800 drop-shadow-md"
+  <div
+    class="overflow-hidden grow-0 shrink-0 w-60 flex flex-row px-4 p-2 space-x-4 items-center rounded-md text-left bg-slate-800 drop-shadow-md cursor-pointer"
     disabled={!onClick}
     on:click={onClick}
+    on:keydown={(event) => {
+      if (event.key.toLowerCase() === 'enter') {
+        event.preventDefault()
+        event.stopPropagation()
+        onClick()
+      }
+    }}
     on:mouseenter={() => (hovered = true)}
     on:mouseleave={() => (hovered = false)}
+    role="button"
+    tabindex="0"
   >
     {#if status.step === 'processing' || status.step === 'downloading'}
       <div class="grow-0 shrink-0 w-5 h-5 text-slate-100 animate-pulse">
@@ -119,5 +128,5 @@
     >
       <XCircleIcon />
     </button>
-  </button>
+  </div>
 {/if}

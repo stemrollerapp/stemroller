@@ -5,9 +5,9 @@ const { pipeline } = require('stream/promises')
 const path = require('path')
 const childProcess = require('child_process')
 const treeKill = require('tree-kill')
-const ytdl = require('@distube/ytdl-core')
 const sanitizeFilename = require('sanitize-filename')
 const { app, BrowserWindow, powerSaveBlocker } = require('electron')
+const { fetchYtStream } = require('./fetchYtStream.cjs')
 
 let statusUpdateCallback = null,
   donateUpdateCallback = null
@@ -170,10 +170,8 @@ function spawnAndWait(videoId, cwd, command, args, isDemucs, isHybrid) {
 
 async function asyncYtdl(videoId, downloadPath) {
   curYtdlAbortController = new AbortController()
-  const ytdlStream = ytdl(videoId, {
-    highWaterMark: 1024 * 1024 * 64,
-    quality: 'highestaudio',
-  })
+
+  const ytdlStream = await fetchYtStream(videoId)
   const fileStream = createWriteStream(downloadPath)
   await pipeline(ytdlStream, fileStream, {
     signal: curYtdlAbortController.signal,
