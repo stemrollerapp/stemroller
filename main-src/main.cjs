@@ -6,10 +6,10 @@ const path = require('path')
 const { compareVersions } = require('compare-versions')
 const fetch = require('electron-fetch').default
 const xxhash = require('xxhash-wasm')
-const ytSearch = require('yt-search')
 const serve = require('electron-serve').default
 const Store = require('electron-store').default
 const processQueue = require('./processQueue.cjs')
+const { searchYt } = require('./fetchYtStream.cjs')
 
 let electronStore = null
 
@@ -28,7 +28,7 @@ function handleComputeLocalFileHash(event, path) {
 }
 
 async function handleYouTubeSearch(event, query) {
-  return JSON.parse(JSON.stringify(await ytSearch(query)))
+  return await searchYt(query)
 }
 
 async function handleSetProcessQueueItems(event, items) {

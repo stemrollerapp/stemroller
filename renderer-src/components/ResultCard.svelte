@@ -41,7 +41,7 @@
   <div class="flex space-x-4 items-center">
     <div class="relative grow-0 shrink-0 rounded-md">
       <img class="h-16" src={`https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`} alt="" />
-      <div class="absolute bottom-0 right-0 px-2 bg-black/75">{video.timestamp}</div>
+      <div class="absolute bottom-0 right-0 px-2 bg-black/75">{video.length_text}</div>
     </div>
     <div class="overflow-hidden flex-1 flex flex-col justify-center leading-snug">
       <div class="whitespace-nowrap overflow-hidden text-ellipsis font-semibold">{video.title}</div>

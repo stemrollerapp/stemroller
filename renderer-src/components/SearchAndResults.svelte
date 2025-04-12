@@ -19,8 +19,8 @@
   const debouncedSearch = debounce(async (query) => {
     try {
       const results = await window.youtubeSearch(query)
-      if (results.videos.length > 0) {
-        videos = results.videos
+      if (results.length > 0) {
+        videos = results
       }
       status = null
     } catch (err) {
