@@ -1,13 +1,13 @@
-const os = require('os')
-const fs = require('fs/promises')
-const { createWriteStream } = require('fs')
-const { pipeline } = require('stream/promises')
-const path = require('path')
-const childProcess = require('child_process')
-const treeKill = require('tree-kill')
-const sanitizeFilename = require('sanitize-filename')
-const { app, BrowserWindow, powerSaveBlocker } = require('electron')
-const { fetchYtStream } = require('./fetchYtStream.cjs')
+import os from 'os'
+import fs from 'fs/promises'
+import { createWriteStream } from 'fs'
+import { pipeline } from 'stream/promises'
+import path from 'path'
+import childProcess from 'child_process'
+import treeKill from 'tree-kill'
+import sanitizeFilename from 'sanitize-filename'
+import { app, BrowserWindow, powerSaveBlocker } from 'electron'
+import { fetchYtStream } from './fetchYtStream.js'
 
 let statusUpdateCallback = null,
   donateUpdateCallback = null
@@ -19,9 +19,9 @@ let curProgressFtStemIdx = null
 function getPathToThirdPartyApps() {
   if (process.env.NODE_ENV === 'dev') {
     if (process.platform === 'win32') {
-      return path.resolve(path.join(__dirname, '..', 'win-extra-files', 'ThirdPartyApps'))
+      return path.resolve(path.join(import.meta.dirname, '..', 'win-extra-files', 'ThirdPartyApps'))
     } else if (process.platform === 'darwin') {
-      return path.resolve(path.join(__dirname, '..', 'mac-extra-files', 'ThirdPartyApps'))
+      return path.resolve(path.join(import.meta.dirname, '..', 'mac-extra-files', 'ThirdPartyApps'))
     } else {
       return null
     }
@@ -37,7 +37,7 @@ function getPathToThirdPartyApps() {
 function getPathToModels() {
   if (process.env.NODE_ENV === 'dev') {
     if (process.platform === 'win32' || process.platform === 'darwin') {
-      return path.resolve(path.join(__dirname, '..', 'anyos-extra-files', 'Models'))
+      return path.resolve(path.join(import.meta.dirname, '..', 'anyos-extra-files', 'Models'))
     } else {
       return null
     }
@@ -252,11 +252,11 @@ function getFfmpegCompressionArguments(filetype) {
 }
 
 async function _processVideo(video, tmpDir) {
-  const demucsModelName = module.exports.getModelName()
-  const demucsStemsFiletype = module.exports.getOutputFormat()
+  const demucsModelName = getModelName()
+  const demucsStemsFiletype = getOutputFormat()
   const compressionArgs = getFfmpegCompressionArguments(demucsStemsFiletype)
-  const needsPrefix = module.exports.getPrefixStemFilenameWithSongName()
-  const needsOriginal = module.exports.getPreserveOriginalAudio()
+  const needsPrefix = getPrefixStemFilenameWithSongName()
+  const needsOriginal = getPreserveOriginalAudio()
 
   const beginTime = Date.now()
   console.log(`BEGIN downloading/processing video "${video.videoId}" - "${video.title}"`)
@@ -295,7 +295,7 @@ async function _processVideo(video, tmpDir) {
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${demucsModelName}"...`
   )
   const demucsExeArgs = [mediaPath, '-n', demucsModelName, '-j', jobCount]
-  if (module.exports.getPyTorchBackend() === 'cpu') {
+  if (getPyTorchBackend() === 'cpu') {
     console.log('Running with "-d cpu" to force CPU instead of CUDA')
     demucsExeArgs.push('-d', 'cpu')
   } else if (process.platform === 'darwin') {
@@ -385,9 +385,9 @@ async function _processVideo(video, tmpDir) {
   updateProgressRaw(video.videoId, 0.99)
 
   const outputBasePathContainingFolder =
-    video.mediaSource === 'local' && module.exports.getLocalFileOutputToContainingDir()
+    video.mediaSource === 'local' && getLocalFileOutputToContainingDir()
       ? path.dirname(mediaPath)
-      : module.exports.getOutputPath()
+      : getOutputPath()
   const outputBasePath = path.join(outputBasePathContainingFolder, outputFolderName)
   await fs.mkdir(outputBasePath, { recursive: true })
   console.log(`Copying all stems to "${outputBasePath}"`)
@@ -436,7 +436,7 @@ async function processVideo(video) {
   } catch (err) {
     console.trace(err)
 
-    const status = module.exports.getVideoStatus(video.videoId)
+    const status = getVideoStatus(video.videoId)
     if (status === null) {
       console.log('Task was canceled by user.')
     } else {
@@ -456,7 +456,7 @@ async function processVideo(video) {
     }
 
     // Will filter out the current (completed) video
-    module.exports.setItems(curItems)
+    setItems(curItems)
 
     if (powerSaveBlockId !== null) {
       try {
@@ -471,9 +471,9 @@ async function processVideo(video) {
   }
 }
 
-module.exports.setItems = async (items) => {
+export const setItems = async (items) => {
   items = items.filter((video) => {
-    let status = module.exports.getVideoStatus(video.videoId)
+    let status = getVideoStatus(video.videoId)
     if (status === null) {
       status = { step: 'queued' }
       setVideoStatusAndPath(video.videoId, status, null)
@@ -552,12 +552,12 @@ function setVideoStatusAndPath(videoId, status, path) {
   })
 }
 
-module.exports.setElectronStore = (store) => {
+export const setElectronStore = (store) => {
   electronStore = store
   loadVideosDb()
 }
 
-module.exports.getOutputPath = () => {
+export const getOutputPath = () => {
   if (electronStore) {
     const outputPath = electronStore.get('outputPath')
     if (outputPath) {
@@ -567,7 +567,7 @@ module.exports.getOutputPath = () => {
   return path.join(os.homedir(), 'Music', 'StemRoller')
 }
 
-module.exports.getModelName = () => {
+export const getModelName = () => {
   if (electronStore) {
     const modelName = electronStore.get('modelName')
     if (modelName) {
@@ -577,39 +577,39 @@ module.exports.getModelName = () => {
   return 'htdemucs'
 }
 
-module.exports.getLocalFileOutputToContainingDir = () => {
+export const getLocalFileOutputToContainingDir = () => {
   return electronStore.get('localFileOutputToContainingDir') || false
 }
 
-module.exports.getPrefixStemFilenameWithSongName = () => {
+export const getPrefixStemFilenameWithSongName = () => {
   return electronStore.get('prefixStemFilenameWithSongName') || false
 }
 
-module.exports.getPreserveOriginalAudio = () => {
+export const getPreserveOriginalAudio = () => {
   return electronStore.get('preserveOriginalAudio') || false
 }
 
-module.exports.setOutputPath = (outputPath) => {
+export const setOutputPath = (outputPath) => {
   electronStore.set('outputPath', outputPath)
 }
 
-module.exports.setModelName = (name) => {
+export const setModelName = (name) => {
   electronStore.set('modelName', name)
 }
 
-module.exports.setLocalFileOutputToContainingDir = (value) => {
+export const setLocalFileOutputToContainingDir = (value) => {
   electronStore.set('localFileOutputToContainingDir', value)
 }
 
-module.exports.setPrefixStemFilenameWithSongName = (value) => {
+export const setPrefixStemFilenameWithSongName = (value) => {
   electronStore.set('prefixStemFilenameWithSongName', value)
 }
 
-module.exports.setPreserveOriginalAudio = (value) => {
+export const setPreserveOriginalAudio = (value) => {
   electronStore.set('preserveOriginalAudio', value)
 }
 
-module.exports.getOutputFormat = () => {
+export const getOutputFormat = () => {
   if (electronStore) {
     const outputFormat = electronStore.get('outputFormat')
     if (outputFormat) {
@@ -619,11 +619,11 @@ module.exports.getOutputFormat = () => {
   return 'wav'
 }
 
-module.exports.setOutputFormat = (outputFormat) => {
+export const setOutputFormat = (outputFormat) => {
   electronStore.set('outputFormat', outputFormat)
 }
 
-module.exports.getPyTorchBackend = () => {
+export const getPyTorchBackend = () => {
   if (electronStore) {
     const backend = electronStore.get('pyTorchBackend')
     if (backend) {
@@ -633,11 +633,11 @@ module.exports.getPyTorchBackend = () => {
   return 'auto'
 }
 
-module.exports.setPyTorchBackend = (backend) => {
+export const setPyTorchBackend = (backend) => {
   electronStore.set('pyTorchBackend', backend)
 }
 
-module.exports.getVideoStatus = (videoId) => {
+export const getVideoStatus = (videoId) => {
   if (videoId in videosDb) {
     return videosDb[videoId].status
   } else {
@@ -645,7 +645,7 @@ module.exports.getVideoStatus = (videoId) => {
   }
 }
 
-module.exports.getVideoPath = (videoId) => {
+export const getVideoPath = (videoId) => {
   if (videoId in videosDb) {
     return videosDb[videoId].path
   } else {
@@ -653,7 +653,7 @@ module.exports.getVideoPath = (videoId) => {
   }
 }
 
-module.exports.deleteVideoStatusAndPath = (videoId) => {
+export const deleteVideoStatusAndPath = (videoId) => {
   if (videoId in videosDb) {
     const nulledEntry = videosDb[videoId]
     for (const i in nulledEntry) {
@@ -670,24 +670,24 @@ module.exports.deleteVideoStatusAndPath = (videoId) => {
   }
 }
 
-module.exports.isBusy = () => {
+export const isBusy = () => {
   return (
     curItems.filter((video) => {
-      const status = module.exports.getVideoStatus(video.videoId)
+      const status = getVideoStatus(video.videoId)
       return status.step === 'processing' || status.step === 'downloading'
     }).length > 0
   )
 }
 
-module.exports.registerStatusUpdateCallback = (callback) => {
+export const registerStatusUpdateCallback = (callback) => {
   statusUpdateCallback = callback
 }
 
-module.exports.registerDonateUpdateCallback = (callback) => {
+export const registerDonateUpdateCallback = (callback) => {
   donateUpdateCallback = callback
 }
 
-module.exports.deleteTmpFolders = async () => {
+export const deleteTmpFolders = async () => {
   const tmpBasePath = os.tmpdir()
   const items = await fs.readdir(tmpBasePath)
   for (const itemName of items) {

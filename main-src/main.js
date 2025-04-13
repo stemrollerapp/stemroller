@@ -1,15 +1,16 @@
-const { app, ipcMain, dialog, shell, Menu, BrowserWindow } = require('electron')
-const fs = require('fs')
-const fsPromises = require('fs/promises')
-const { execSync } = require('child_process')
-const path = require('path')
-const { compareVersions } = require('compare-versions')
-const fetch = require('electron-fetch').default
-const xxhash = require('xxhash-wasm')
-const serve = require('electron-serve').default
-const Store = require('electron-store').default
-const processQueue = require('./processQueue.cjs')
-const { searchYt } = require('./fetchYtStream.cjs')
+import { app, ipcMain, dialog, shell, Menu, BrowserWindow } from 'electron'
+import fs from 'fs'
+import fsPromises from 'fs/promises'
+import { execSync } from 'child_process'
+import path from 'path'
+import { compareVersions } from 'compare-versions'
+import electronFetch from 'electron-fetch'
+const fetch = electronFetch.default
+import xxhash from 'xxhash-wasm'
+import serve from 'electron-serve'
+import Store from 'electron-store'
+import * as processQueue from './processQueue.js'
+import { searchYt } from './fetchYtStream.js'
 
 let electronStore = null
 
@@ -202,7 +203,7 @@ function createWindow() {
     webPreferences: {
       sandbox: true,
       devTools: process.env.NODE_ENV === 'dev',
-      preload: path.resolve(path.join(__dirname, 'preload.cjs')),
+      preload: path.resolve(path.join(import.meta.dirname, 'preload.cjs')),
     },
   })
 

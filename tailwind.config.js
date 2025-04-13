@@ -1,11 +1,11 @@
-const defaultTheme = require('tailwindcss/defaultTheme')
+import defaultTheme from 'tailwindcss/defaultTheme'
 
-module.exports = {
+export default {
   content: ['./renderer-src/**/*.{html,js,svelte,ts}'],
   theme: {
     extend: {
       fontFamily: {
-        'sans': ['Mukta', ...defaultTheme.fontFamily.sans],
+        sans: ['Mukta', ...defaultTheme.fontFamily.sans],
       },
     },
   },

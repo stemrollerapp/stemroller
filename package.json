@@ -8,7 +8,7 @@
   "license": "Unlicense",
   "author": "StemRoller Developers",
   "repository": "https://github.com/stemrollerapp/stemroller.git",
-  "main": "main-src/main.cjs",
+  "main": "main-src/main.js",
   "scripts": {
     "download-third-party-apps": "node download-third-party-apps.js",
     "dev": "cross-env NODE_ENV=dev STEMROLLER_RUN_FROM_SOURCE=true npm run dev:all",

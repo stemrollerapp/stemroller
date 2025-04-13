@@ -1,9 +1,10 @@
 // This file is partially copied from: https://github.com/LuanRT/BgUtils/blob/main/examples/node/index.ts
 
-const { Innertube, UniversalCache, Log } = require('youtubei.js')
-const { BG } = require('bgutils-js')
-const { JSDOM } = require('jsdom')
-const fetch = require('electron-fetch').default
+import { Innertube, UniversalCache, Log } from 'youtubei.js'
+import { BG } from 'bgutils-js'
+import { JSDOM } from 'jsdom'
+import electronFetch from 'electron-fetch'
+const fetch = electronFetch.default
 
 const REQUEST_KEY = 'O43z0dpjhgX20SCx4KAo'
 
@@ -76,7 +77,7 @@ const setupDownloadInnertube = async () => {
   })
 }
 
-module.exports.fetchYtStream = async (videoId) => {
+export const fetchYtStream = async (videoId) => {
   await setupDownloadInnertube()
 
   const ytStream = await downloadInnertube.download(videoId, {
@@ -87,7 +88,7 @@ module.exports.fetchYtStream = async (videoId) => {
   return ytStream
 }
 
-module.exports.searchYt = async (query) => {
+export const searchYt = async (query) => {
   await setupSearchInnertube()
 
   const innertubeResults = await searchInnertube.search(query, {
