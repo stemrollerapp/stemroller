@@ -11,13 +11,13 @@
     if (retry) {
       await window.deleteVideoStatusAndPath(video.videoId)
     }
-    const items = processQueueItems.filter(item => item.videoId !== video.videoId)
+    const items = processQueueItems.filter((item) => item.videoId !== video.videoId)
     items.push(video)
     processQueueItems = items
   }
 
   async function handleCancelClicked(video) {
-    processQueueItems = processQueueItems.filter(item => item.videoId !== video.videoId)
+    processQueueItems = processQueueItems.filter((item) => item.videoId !== video.videoId)
     const status = await window.getVideoStatus(video.videoId)
     if (status.step !== 'done') {
       await window.deleteVideoStatusAndPath(video.videoId)
@@ -50,7 +50,9 @@
         title: filePathToTitle(path),
       })
     } catch (err) {
-      window.alert('Unable to process this file. Please ensure that you dropped an audio file, not a folder or other item.')
+      window.alert(
+        'Unable to process this file. Please ensure that you dropped an audio file, not a folder or other item.'
+      )
     }
   }
 
@@ -63,7 +65,7 @@
     if (typeof window !== 'undefined') {
       window.setVideoStatusUpdateHandler('__global', 'IndexRoute', (message) => {
         if (message.status === null) {
-          processQueueItems = processQueueItems.filter(item => item.videoId !== message.videoId)
+          processQueueItems = processQueueItems.filter((item) => item.videoId !== message.videoId)
         }
       })
     }
@@ -79,7 +81,11 @@
   <SearchAndResults onSplitClicked={handleSplitClicked} onFileSelected={handleFileSelected} />
 
   {#if processQueueItems.length > 0}
-    <ProcessQueue items={processQueueItems} onSplitClicked={handleSplitClicked} onCancelClicked={handleCancelClicked} />
+    <ProcessQueue
+      items={processQueueItems}
+      onSplitClicked={handleSplitClicked}
+      onCancelClicked={handleCancelClicked}
+    />
   {/if}
 
   <BottomBar />

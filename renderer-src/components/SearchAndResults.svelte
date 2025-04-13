@@ -51,7 +51,7 @@
     input.type = 'file'
     input.addEventListener('change', (event) => {
       for (const file of event.target.files) {
-        onFileSelected(file.path)
+        onFileSelected(window.getFilePath(file))
       }
     })
     input.click()

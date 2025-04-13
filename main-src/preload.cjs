@@ -1,5 +1,8 @@
-const { contextBridge, ipcRenderer } = require('electron')
+const { contextBridge, ipcRenderer, webUtils } = require('electron')
 
+contextBridge.exposeInMainWorld('getFilePath', (file) => {
+  return webUtils.getPathForFile(file)
+})
 contextBridge.exposeInMainWorld('computeLocalFileHash', (path) =>
   ipcRenderer.invoke('computeLocalFileHash', path)
 )
