@@ -14,6 +14,7 @@
   let localFileOutputToContainingDir = null
   let prefixStemFilenameWithSongName = null
   let preserveOriginalAudio = null
+  let mounted = false
 
   async function handleBrowseStems() {
     const newOutputPath = await window.browseOutputPath()
@@ -30,25 +31,36 @@
     localFileOutputToContainingDir = await window.getLocalFileOutputToContainingDir()
     prefixStemFilenameWithSongName = await window.getPrefixStemFilenameWithSongName()
     preserveOriginalAudio = await window.getPreserveOriginalAudio()
+    mounted = true
   })
 
   $: {
-    if (pyTorchBackend) {
+    if (mounted && pyTorchBackend) {
       window.setPyTorchBackend(pyTorchBackend)
     }
-    if (modelName) {
+  }
+  $: {
+    if (mounted && modelName) {
       window.setModelName(modelName)
     }
-    if (outputFormat) {
+  }
+  $: {
+    if (mounted && outputFormat) {
       window.setOutputFormat(outputFormat)
     }
-    if (localFileOutputToContainingDir !== null) {
+  }
+  $: {
+    if (mounted && localFileOutputToContainingDir !== null) {
       window.setLocalFileOutputToContainingDir(localFileOutputToContainingDir)
     }
-    if (prefixStemFilenameWithSongName !== null) {
+  }
+  $: {
+    if (mounted && prefixStemFilenameWithSongName !== null) {
       window.setPrefixStemFilenameWithSongName(prefixStemFilenameWithSongName)
     }
-    if (preserveOriginalAudio !== null) {
+  }
+  $: {
+    if (mounted && preserveOriginalAudio !== null) {
       window.setPreserveOriginalAudio(preserveOriginalAudio)
     }
   }
