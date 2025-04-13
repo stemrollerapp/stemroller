@@ -55,6 +55,12 @@ body {
   height: 100%;
 }
 
+.body-container {
+  display: contents;
+  width: 100%;
+  height: 100%;
+}
+
 .bottom-bar-button-flash {
   animation: 0.75s infinite alternate bottom-bar-button-flash-keyframes;
 }
