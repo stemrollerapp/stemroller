@@ -1,5 +1,8 @@
 // This file is partially copied from: https://github.com/LuanRT/BgUtils/blob/main/examples/node/index.ts
 
+import fs from 'fs/promises'
+import path from 'path'
+import os from 'os'
 import { Innertube, UniversalCache, Log } from 'youtubei.js'
 import { BG } from 'bgutils-js'
 import { JSDOM } from 'jsdom'
@@ -8,8 +11,34 @@ const fetch = electronFetch.default
 
 const REQUEST_KEY = 'O43z0dpjhgX20SCx4KAo'
 
+let cacheDir = null
 let searchInnertube = null
 let downloadInnertube = null
+
+const createYtCacheDir = async () => {
+  if (cacheDir) {
+    return
+  }
+
+  cacheDir = await fs.mkdtemp(path.join(os.tmpdir(), 'StemRoller-cache-'))
+}
+
+export const deleteYtCacheDir = async () => {
+  if (!cacheDir) {
+    return
+  }
+
+  try {
+    await fs.rm(cacheDir, {
+      recursive: true,
+      maxRetries: 5,
+      retryDelay: 1000,
+    })
+    console.log(`Deleted cache folder "${cacheDir}"`)
+  } catch (error) {
+    console.trace(error)
+  }
+}
 
 const setupSearchInnertube = async () => {
   if (searchInnertube) {
@@ -69,10 +98,12 @@ const setupDownloadInnertube = async () => {
     bgConfig,
   })
 
+  await createYtCacheDir()
+
   downloadInnertube = await Innertube.create({
     po_token: poTokenResult.poToken,
     visitor_data: visitorData,
-    cache: new UniversalCache(true),
+    cache: new UniversalCache(true, cacheDir),
     generate_session_locally: true,
   })
 }

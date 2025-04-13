@@ -10,7 +10,7 @@ import xxhash from 'xxhash-wasm'
 import serve from 'electron-serve'
 import Store from 'electron-store'
 import * as processQueue from './processQueue.js'
-import { searchYt } from './fetchYtStream.js'
+import { searchYt, deleteYtCacheDir } from './fetchYtStream.js'
 
 let electronStore = null
 
@@ -306,6 +306,7 @@ async function checkForMsvcRuntime() {
 }
 
 async function main() {
+  await deleteYtCacheDir()
   await processQueue.deleteTmpFolders()
 
   app.on('second-instance', (event, commandLine, workingDirectory, additionalData) => {
@@ -363,6 +364,7 @@ async function main() {
   })
 
   app.on('window-all-closed', async () => {
+    await deleteYtCacheDir()
     await processQueue.setItems([])
     await processQueue.deleteTmpFolders()
     app.quit()
