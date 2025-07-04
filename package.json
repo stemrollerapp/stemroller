@@ -61,10 +61,10 @@
     "electron-fetch": "^1.9.1",
     "electron-serve": "^2.1.1",
     "electron-store": "^10.0.1",
-    "jsdom": "^26.0.0",
+    "jsdom": "^26.1.0",
     "sanitize-filename": "^1.6.3",
     "tree-kill": "^1.2.2",
     "xxhash-wasm": "^1.1.0",
-    "youtubei.js": "^13.4.0"
+    "youtubei.js": "^14.0.0"
   }
 }

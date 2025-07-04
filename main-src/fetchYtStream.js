@@ -3,17 +3,14 @@
 import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
-import { Innertube, UniversalCache, Log } from 'youtubei.js'
-import { BG } from 'bgutils-js'
+import { Innertube, ProtoUtils, Utils, UniversalCache, Log } from 'youtubei.js'
+import { BG, USER_AGENT } from 'bgutils-js'
 import { JSDOM } from 'jsdom'
-import electronFetch from 'electron-fetch'
-const fetch = electronFetch.default
-
-const REQUEST_KEY = 'O43z0dpjhgX20SCx4KAo'
 
 let cacheDir = null
 let searchInnertube = null
 let downloadInnertube = null
+let downloadPoToken = null
 
 const createYtCacheDir = async () => {
   if (cacheDir) {
@@ -61,47 +58,16 @@ const setupDownloadInnertube = async () => {
     Log.setLevel(Log.Level.WARNING)
   }
 
-  const visitorData = searchInnertube.session.context.client.visitorData
-  if (!visitorData) {
-    throw new Error('Could not get visitorData')
-  }
-
-  const dom = new JSDOM()
-  Object.assign(globalThis, {
-    window: dom.window,
-    document: dom.window.document,
-  })
-
-  const bgConfig = {
-    fetch,
-    globalObj: globalThis,
-    identifier: visitorData,
-    requestKey: REQUEST_KEY,
-  }
-
-  const bgChallenge = await BG.Challenge.create(bgConfig)
-  if (!bgChallenge) {
-    throw new Error('Could not get challenge')
-  }
-
-  const interpreterJavascript =
-    bgChallenge.interpreterJavascript.privateDoNotAccessOrElseSafeScriptWrappedValue
-  if (interpreterJavascript) {
-    new Function(interpreterJavascript)()
-  } else {
-    throw new Error('Could not load VM')
-  }
-
-  const poTokenResult = await BG.PoToken.generate({
-    program: bgChallenge.program,
-    globalName: bgChallenge.globalName,
-    bgConfig,
-  })
+  const visitorData = ProtoUtils.encodeVisitorData(
+    Utils.generateRandomString(11),
+    Math.floor(Date.now() / 1000)
+  )
+  downloadPoToken = await getPo(visitorData)
 
   await createYtCacheDir()
 
   downloadInnertube = await Innertube.create({
-    po_token: poTokenResult.poToken,
+    po_token: downloadPoToken,
     visitor_data: visitorData,
     cache: new UniversalCache(true, cacheDir),
     generate_session_locally: true,
@@ -113,7 +79,6 @@ export const fetchYtStream = async (videoId) => {
 
   const ytStream = await downloadInnertube.download(videoId, {
     type: 'audio',
-    quality: 'best',
   })
 
   return ytStream
@@ -153,4 +118,56 @@ export const searchYt = async (query) => {
   }
 
   return plainResults
+}
+
+const getPo = async (identifier) => {
+  const dom = new JSDOM(
+    '<!DOCTYPE html><html lang="en"><head><title></title></head><body></body></html>',
+    {
+      url: 'https://www.youtube.com/',
+      referrer: 'https://www.youtube.com/',
+      userAgent: USER_AGENT,
+    }
+  )
+  Object.assign(globalThis, {
+    window: dom.window,
+    document: dom.window.document,
+    location: dom.window.location,
+    origin: dom.window.origin,
+  })
+  if (!Reflect.has(globalThis, 'navigator')) {
+    Object.defineProperty(globalThis, 'navigator', { value: dom.window.navigator })
+  }
+
+  const requestKey = 'O43z0dpjhgX20SCx4KAo'
+
+  const bgConfig = {
+    fetch,
+    globalObj: globalThis,
+    requestKey,
+    identifier,
+  }
+
+  const bgChallenge = await BG.Challenge.create(bgConfig)
+
+  if (!bgChallenge) {
+    throw new Error('Could not get challenge')
+  }
+
+  const interpreterJavascript =
+    bgChallenge.interpreterJavascript.privateDoNotAccessOrElseSafeScriptWrappedValue
+
+  if (interpreterJavascript) {
+    new Function(interpreterJavascript)()
+  } else {
+    throw new Error('Could not load VM')
+  }
+
+  const poTokenResult = await BG.PoToken.generate({
+    program: bgChallenge.program,
+    globalName: bgChallenge.globalName,
+    bgConfig,
+  })
+
+  return poTokenResult.poToken
 }
