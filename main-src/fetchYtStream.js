@@ -71,6 +71,7 @@ const setupDownloadInnertube = async () => {
     visitor_data: visitorData,
     cache: new UniversalCache(true, cacheDir),
     generate_session_locally: true,
+    player_id: '0004de42', // https://github.com/LuanRT/YouTube.js/issues/1043#issuecomment-3328154175
   })
 }
 
