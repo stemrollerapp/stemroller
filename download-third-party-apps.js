@@ -125,15 +125,21 @@ async function main() {
   ]
 
   if (process.platform === 'win32') {
-    downloads.push([
-      'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip',
-      path.join(
-        `${winOrMac}-extra-files`,
-        'ThirdPartyApps',
-        'ffmpeg',
-        'ffmpeg-release-essentials.zip'
-      ),
-    ])
+    downloads.push(
+      [
+        'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip',
+        path.join(
+          `${winOrMac}-extra-files`,
+          'ThirdPartyApps',
+          'ffmpeg',
+          'ffmpeg-release-essentials.zip'
+        ),
+      ],
+      [
+        'https://github.com/yt-dlp/yt-dlp/releases/download/2025.09.26/yt-dlp_win.zip',
+        path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'yt-dlp', 'yt-dlp_win.zip'),
+      ]
+    )
   } else if (process.platform === 'darwin') {
     downloads.push(
       [
@@ -143,6 +149,10 @@ async function main() {
       [
         'https://evermeet.cx/ffmpeg/getrelease/ffprobe/zip',
         path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'ffmpeg', 'ffprobe-release.zip'),
+      ],
+      [
+        'https://github.com/yt-dlp/yt-dlp/releases/download/2025.09.26/yt-dlp_macos.zip',
+        path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'yt-dlp', 'yt-dlp_macos.zip'),
       ]
     )
   }
