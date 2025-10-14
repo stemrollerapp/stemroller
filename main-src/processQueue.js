@@ -1,19 +1,16 @@
 import os from 'os'
 import fs from 'fs/promises'
-import { createWriteStream } from 'fs'
-import { pipeline } from 'stream/promises'
 import path from 'path'
 import childProcess from 'child_process'
 import treeKill from 'tree-kill'
 import sanitizeFilename from 'sanitize-filename'
 import { app, BrowserWindow, powerSaveBlocker } from 'electron'
-import { fetchYtStream } from './fetchYtStream.js'
 
 let statusUpdateCallback = null,
   donateUpdateCallback = null
+let ytCacheDir = null
 let curItems = [],
-  curChildProcess = null,
-  curYtdlAbortController = null
+  curChildProcess = null
 let curProgressFtStemIdx = null
 
 function getPathToThirdPartyApps() {
@@ -58,8 +55,12 @@ const PATH_TO_DEMUCS = PATH_TO_THIRD_PARTY_APPS
 const PATH_TO_FFMPEG = PATH_TO_THIRD_PARTY_APPS
   ? path.join(PATH_TO_THIRD_PARTY_APPS, 'ffmpeg', 'bin')
   : null
+const PATH_TO_YT_DLP = PATH_TO_THIRD_PARTY_APPS
+  ? path.join(PATH_TO_THIRD_PARTY_APPS, 'yt-dlp')
+  : null
 const DEMUCS_EXE_NAME = PATH_TO_THIRD_PARTY_APPS ? 'demucs-cxfreeze' : 'demucs'
 const FFMPEG_EXE_NAME = 'ffmpeg'
+const YT_DLP_EXE_NAME = 'yt-dlp'
 const CHILD_PROCESS_ENV = {
   ...process.env,
   LANG: null, // Will be set when ready to split, since we can only check system locale after `app` is ready
@@ -67,7 +68,11 @@ const CHILD_PROCESS_ENV = {
 if (PATH_TO_THIRD_PARTY_APPS) {
   // Override the system's PATH with the path to our own bundled third-party apps
   CHILD_PROCESS_ENV.PATH =
-    PATH_TO_DEMUCS + (process.platform === 'win32' ? ';' : ':') + PATH_TO_FFMPEG
+    PATH_TO_DEMUCS +
+    (process.platform === 'win32' ? ';' : ':') +
+    PATH_TO_FFMPEG +
+    (process.platform === 'win32' ? ';' : ':') +
+    PATH_TO_YT_DLP
 }
 const TMP_PREFIX = 'StemRoller-'
 
@@ -79,12 +84,6 @@ function getJobCount() {
 }
 
 function killCurChildProcess() {
-  if (curYtdlAbortController) {
-    console.log('Aborting ytdl pipeline')
-    curYtdlAbortController.abort()
-    curYtdlAbortController = null
-  }
-
   if (curChildProcess) {
     try {
       console.trace(`treeKill process ${curChildProcess.pid}`)
@@ -130,7 +129,7 @@ function updateDemucsProgress(videoId, data) {
   }
 }
 
-function spawnAndWait(videoId, cwd, command, args, isDemucs, isHybrid) {
+function spawnAndWait(videoId, cwd, command, args, isDemucs) {
   return new Promise((resolve, reject) => {
     killCurChildProcess()
 
@@ -168,15 +167,46 @@ function spawnAndWait(videoId, cwd, command, args, isDemucs, isHybrid) {
   })
 }
 
-async function asyncYtdl(videoId, downloadPath) {
-  curYtdlAbortController = new AbortController()
+async function createYtCacheDir() {
+  if (ytCacheDir) {
+    return
+  }
 
-  const ytdlStream = await fetchYtStream(videoId)
-  const fileStream = createWriteStream(downloadPath)
-  await pipeline(ytdlStream, fileStream, {
-    signal: curYtdlAbortController.signal,
-  })
-  curYtdlAbortController = null
+  ytCacheDir = await fs.mkdtemp(path.join(os.tmpdir(), 'StemRoller-cache-'))
+}
+
+export async function deleteYtCacheDir() {
+  if (!ytCacheDir) {
+    return
+  }
+
+  try {
+    await fs.rm(ytCacheDir, {
+      recursive: true,
+      maxRetries: 5,
+      retryDelay: 1000,
+    })
+    console.log(`Deleted cache folder "${ytCacheDir}"`)
+  } catch (error) {
+    console.trace(error)
+  }
+}
+
+async function downloadYoutube(videoId, downloadPath) {
+  await createYtCacheDir()
+  const videoUrl = `https://www.youtube.com/watch?v=${videoId}`
+  const ytDlpExeArgs = [
+    '-f',
+    'bestaudio',
+    '--cache-dir',
+    ytCacheDir,
+    '-o',
+    path.basename(downloadPath),
+    '--newline',
+    '--progress',
+    videoUrl,
+  ]
+  await spawnAndWait(videoId, path.dirname(downloadPath), YT_DLP_EXE_NAME, ytDlpExeArgs, false)
 }
 
 async function findDemucsOutputDir(basePath) {
@@ -268,7 +298,7 @@ async function _processVideo(video, tmpDir) {
     const ytFilename = 'yt-audio'
     const ytPath = path.join(tmpDir, ytFilename)
     console.log(`Downloading YouTube video "${video.videoId}"; storing in "${ytPath}"`)
-    await asyncYtdl(video.videoId, ytPath)
+    await downloadYoutube(video.videoId, ytPath)
     mediaPath = ytPath
   } else if (video.mediaSource === 'local') {
     mediaPath = video.localInputPath

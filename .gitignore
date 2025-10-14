@@ -14,5 +14,7 @@ node_modules
 !*-extra-files/ThirdPartyApps/ffmpeg/bin
 *-extra-files/ThirdPartyApps/ffmpeg/bin/**
 !*-extra-files/ThirdPartyApps/ffmpeg/bin/.gitkeep
+*-extra-files/ThirdPartyApps/yt-dlp/**
+!*-extra-files/ThirdPartyApps/yt-dlp/.gitkeep
 *-extra-files/Models/**
 !*-extra-files/Models/.gitkeep

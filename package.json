@@ -1,6 +1,6 @@
 {
   "name": "stemroller",
-  "version": "2.2.4",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "description": "Isolate vocals, drums, bass, and other instrumental stems from any song",
@@ -55,13 +55,10 @@
     "tailwindcss": "^4.1.3"
   },
   "dependencies": {
-    "bgutils-js": "^3.2.0",
-    "canvas": "^3.1.0",
     "compare-versions": "^6.1.1",
     "electron-fetch": "^1.9.1",
     "electron-serve": "^2.1.1",
     "electron-store": "^10.0.1",
-    "jsdom": "^26.1.0",
     "sanitize-filename": "^1.6.3",
     "tree-kill": "^1.2.2",
     "xxhash-wasm": "^1.1.0",
