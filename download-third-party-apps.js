@@ -215,6 +215,13 @@ async function main() {
       path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'ffmpeg', 'bin', 'ffprobe')
     )
     console.log('Move successful: ffmpeg and ffprobe')
+
+    console.log('Renaming yt-dlp_macos to yt-dlp')
+    await fsPromises.rename(
+      path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'yt-dlp', 'yt-dlp_macos'),
+      path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'yt-dlp', 'yt-dlp')
+    )
+    console.log('Rename successful: yt-dlp_macos to yt-dlp')
   }
 }
 

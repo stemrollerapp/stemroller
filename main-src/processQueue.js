@@ -60,7 +60,7 @@ const PATH_TO_YT_DLP = PATH_TO_THIRD_PARTY_APPS
   : null
 const DEMUCS_EXE_NAME = PATH_TO_THIRD_PARTY_APPS ? 'demucs-cxfreeze' : 'demucs'
 const FFMPEG_EXE_NAME = 'ffmpeg'
-const YT_DLP_EXE_NAME = process.platform === 'darwin' ? 'yt-dlp_macos' : 'yt-dlp'
+const YT_DLP_EXE_NAME = 'yt-dlp'
 const CHILD_PROCESS_ENV = {
   ...process.env,
   LANG: null, // Will be set when ready to split, since we can only check system locale after `app` is ready
@@ -195,7 +195,17 @@ export async function deleteYtCacheDir() {
 async function downloadYoutube(videoId, downloadPath) {
   await createYtCacheDir()
   const videoUrl = `https://www.youtube.com/watch?v=${videoId}`
-  const ytDlpExeArgs = ['-f', 'bestaudio', '--cache-dir', ytCacheDir, '-o', path.basename(downloadPath), '--newline', '--progress', videoUrl]
+  const ytDlpExeArgs = [
+    '-f',
+    'bestaudio',
+    '--cache-dir',
+    ytCacheDir,
+    '-o',
+    path.basename(downloadPath),
+    '--newline',
+    '--progress',
+    videoUrl,
+  ]
   await spawnAndWait(videoId, path.dirname(downloadPath), YT_DLP_EXE_NAME, ytDlpExeArgs, false)
 }
 
