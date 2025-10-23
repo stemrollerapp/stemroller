@@ -136,7 +136,7 @@ async function main() {
         ),
       ],
       [
-        'https://github.com/yt-dlp/yt-dlp/releases/download/2025.09.26/yt-dlp_win.zip',
+        'https://github.com/yt-dlp/yt-dlp/releases/download/2025.10.22/yt-dlp_win.zip',
         path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'yt-dlp', 'yt-dlp_win.zip'),
       ]
     )
@@ -151,7 +151,7 @@ async function main() {
         path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'ffmpeg', 'ffprobe-release.zip'),
       ],
       [
-        'https://github.com/yt-dlp/yt-dlp/releases/download/2025.09.26/yt-dlp_macos.zip',
+        'https://github.com/yt-dlp/yt-dlp/releases/download/2025.10.22/yt-dlp_macos.zip',
         path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'yt-dlp', 'yt-dlp_macos.zip'),
       ]
     )
