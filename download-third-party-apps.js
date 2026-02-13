@@ -49,6 +49,11 @@ async function fileExists(filePath) {
 }
 
 async function moveDirChildrenUpAndDeleteDir(dirName) {
+  if (!(await fileExists(dirName))) {
+    console.log(`Skipping move; directory does not exist: "${dirName}"`)
+    return
+  }
+
   const parentDirName = path.resolve(path.join(dirName, '..'))
   const fileNames = await fsPromises.readdir(dirName)
   for (const fileName of fileNames) {
@@ -196,14 +201,22 @@ async function main() {
   )
 
   if (process.platform === 'win32') {
-    await moveDirChildrenUpAndDeleteDir(
-      path.join(
-        `${winOrMac}-extra-files`,
-        'ThirdPartyApps',
-        'ffmpeg',
-        'ffmpeg-8.0-essentials_build'
-      )
+    const ffmpegParentDir = path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'ffmpeg')
+    const ffmpegDirChildren = await fsPromises.readdir(ffmpegParentDir, {
+      withFileTypes: true,
+    })
+    const extractedFfmpegDir = ffmpegDirChildren.find(
+      (entry) =>
+        entry.isDirectory() &&
+        entry.name.startsWith('ffmpeg-') &&
+        entry.name.endsWith('essentials_build')
     )
+    if (!extractedFfmpegDir) {
+      throw new Error(
+        `Unable to find extracted ffmpeg directory in "${ffmpegParentDir}" after unzip`
+      )
+    }
+    await moveDirChildrenUpAndDeleteDir(path.join(ffmpegParentDir, extractedFfmpegDir.name))
   } else if (process.platform === 'darwin') {
     console.log('Moving: ffmpeg and ffprobe')
     await fsPromises.rename(

@@ -218,6 +218,12 @@ async function findDemucsOutputDir(basePath) {
       return path.join(basePath, entry.name)
     }
   }
+
+  const hasFilesInBasePath = entries.some((entry) => entry.isFile())
+  if (hasFilesInBasePath) {
+    return basePath
+  }
+
   throw new Error('Unable to find Demucs output directory')
 }
 
@@ -325,6 +331,7 @@ async function _processVideo(video, tmpDir) {
     `Splitting video "${video.videoId}"; ${jobCount} jobs using model "${demucsModelName}"...`
   )
   const demucsExeArgs = [mediaPath, '-n', demucsModelName, '-j', jobCount]
+  demucsExeArgs.push('--filename', '{stem}.{ext}')
   if (getPyTorchBackend() === 'cpu') {
     console.log('Running with "-d cpu" to force CPU instead of CUDA')
     demucsExeArgs.push('-d', 'cpu')
