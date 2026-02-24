@@ -114,7 +114,7 @@ async function main() {
       path.join('anyos-extra-files', 'Models', 'htdemucs_6s.yaml'),
     ],
     [
-      `https://github.com/stemrollerapp/demucs-cxfreeze/releases/download/release-26a2baeb0058444b3cf87028d9df721d37c78dfb/demucs-cxfreeze-${winOrMac}${cudaSuffix}.${demucsZipOr7z}`,
+      `https://github.com/stemrollerapp/demucs/releases/download/release-fc6bab94c9ba35f0a59ad6896232c7cfefee75e1/demucs-cxfreeze-${winOrMac}${cudaSuffix}.${demucsZipOr7z}`,
       path.join(
         `${winOrMac}-extra-files`,
         'ThirdPartyApps',
@@ -136,7 +136,7 @@ async function main() {
         ),
       ],
       [
-        'https://github.com/yt-dlp/yt-dlp/releases/download/2025.10.22/yt-dlp_win.zip',
+        'https://github.com/yt-dlp/yt-dlp/releases/download/2026.02.21/yt-dlp_win.zip',
         path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'yt-dlp', 'yt-dlp_win.zip'),
       ]
     )
@@ -151,7 +151,7 @@ async function main() {
         path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'ffmpeg', 'ffprobe-release.zip'),
       ],
       [
-        'https://github.com/yt-dlp/yt-dlp/releases/download/2025.10.22/yt-dlp_macos.zip',
+        'https://github.com/yt-dlp/yt-dlp/releases/download/2026.02.21/yt-dlp_macos.zip',
         path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'yt-dlp', 'yt-dlp_macos.zip'),
       ]
     )
@@ -201,7 +201,7 @@ async function main() {
         `${winOrMac}-extra-files`,
         'ThirdPartyApps',
         'ffmpeg',
-        'ffmpeg-8.0-essentials_build'
+        'ffmpeg-8.0.1-essentials_build'
       )
     )
   } else if (process.platform === 'darwin') {
