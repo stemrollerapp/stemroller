@@ -157,6 +157,18 @@ async function main() {
     )
   }
 
+  if (process.platform === 'win32') {
+    downloads.push([
+      'https://github.com/denoland/deno/releases/download/v2.6.10/deno-x86_64-pc-windows-msvc.zip',
+      path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'deno', 'deno-win.zip'),
+    ])
+  } else if (process.platform === 'darwin') {
+    downloads.push([
+      'https://github.com/denoland/deno/releases/download/v2.6.10/deno-x86_64-apple-darwin.zip',
+      path.join(`${winOrMac}-extra-files`, 'ThirdPartyApps', 'deno', 'deno-mac.zip'),
+    ])
+  }
+
   for (const download of downloads) {
     if (!(await fileExists(download[1]))) {
       console.log(`Downloading: "${download[0]}"`)

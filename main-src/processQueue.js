@@ -58,6 +58,9 @@ const PATH_TO_FFMPEG = PATH_TO_THIRD_PARTY_APPS
 const PATH_TO_YT_DLP = PATH_TO_THIRD_PARTY_APPS
   ? path.join(PATH_TO_THIRD_PARTY_APPS, 'yt-dlp')
   : null
+const PATH_TO_DENO = PATH_TO_THIRD_PARTY_APPS
+  ? path.join(PATH_TO_THIRD_PARTY_APPS, 'deno')
+  : null
 const DEMUCS_EXE_NAME = PATH_TO_THIRD_PARTY_APPS ? 'demucs-cxfreeze' : 'demucs'
 const FFMPEG_EXE_NAME = 'ffmpeg'
 const YT_DLP_EXE_NAME = 'yt-dlp'
@@ -72,7 +75,9 @@ if (PATH_TO_THIRD_PARTY_APPS) {
     (process.platform === 'win32' ? ';' : ':') +
     PATH_TO_FFMPEG +
     (process.platform === 'win32' ? ';' : ':') +
-    PATH_TO_YT_DLP
+    PATH_TO_YT_DLP +
+    (process.platform === 'win32' ? ';' : ':') +
+    PATH_TO_DENO
 }
 const TMP_PREFIX = 'StemRoller-'
 

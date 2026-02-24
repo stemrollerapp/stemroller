@@ -299,9 +299,10 @@ async function checkForMsvcRuntime() {
       await shell.openExternal(
         'https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#latest-microsoft-visual-c-redistributable-version'
       )
+      return false
     }
 
-    return false
+    return true // Allow the app to continue running if the user rejects the download. On some devices, it seems the runtime finding logic is broken and this is necessary to allow the app to function.
   }
 }
 
