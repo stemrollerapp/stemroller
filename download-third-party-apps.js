@@ -114,7 +114,7 @@ async function main() {
       path.join('anyos-extra-files', 'Models', 'htdemucs_6s.yaml'),
     ],
     [
-      `https://github.com/stemrollerapp/demucs/releases/download/release-fc6bab94c9ba35f0a59ad6896232c7cfefee75e1/demucs-cxfreeze-${winOrMac}${cudaSuffix}.${demucsZipOr7z}`,
+      `https://github.com/stemrollerapp/demucs/releases/download/release-a910eecc3194581fd252a1069a7a8a3757a9210f/demucs-cxfreeze-${winOrMac}${cudaSuffix}.${demucsZipOr7z}`,
       path.join(
         `${winOrMac}-extra-files`,
         'ThirdPartyApps',
