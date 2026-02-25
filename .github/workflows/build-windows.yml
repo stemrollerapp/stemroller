@@ -1,8 +1,6 @@
 name: build-windows
 on:
   workflow_dispatch: null
-  push:
-    branches: [main]
 
 jobs:
   build-windows:
@@ -27,7 +25,17 @@ jobs:
       - run: .\7zr.exe x "7zInstaller-x64.exe"
       - run: move "dist\stemroller-${{ steps.package-version.outputs.version }}-win-cuda" "stemroller-${{ steps.package-version.outputs.version }}-win-cuda"
       - run: .\7z.exe a -m0=lzma2 -mmt=on -mx=9 -sfx"7z.sfx" "stemroller-${{ steps.package-version.outputs.version }}-win-cuda.exe" "stemroller-${{ steps.package-version.outputs.version }}-win-cuda"
-      - uses: softprops/action-gh-release@v1
+      - uses: actions/setup-python@v5
         with:
-          tag_name: ${{ steps.package-version.outputs.version }}
-          files: stemroller-${{ steps.package-version.outputs.version }}-win-cuda.exe
+          python-version: '3.10'
+      - run: python -m pip install --upgrade pip huggingface_hub
+      - name: Upload artifact to Hugging Face Hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_REPO_ID: ${{ vars.HF_REPO_ID }}
+          HF_REPO_TYPE: ${{ vars.HF_REPO_TYPE }}
+        run: |
+          if (-not $env:HF_TOKEN) { throw "HF_TOKEN secret is not set" }
+          if (-not $env:HF_REPO_ID) { throw "HF_REPO_ID variable is not set" }
+          if (-not $env:HF_REPO_TYPE) { $env:HF_REPO_TYPE = "model" }
+          huggingface-cli upload $env:HF_REPO_ID "stemroller-${{ steps.package-version.outputs.version }}-win-cuda.exe" "stemroller-${{ steps.package-version.outputs.version }}-win-cuda.exe" --repo-type $env:HF_REPO_TYPE --token $env:HF_TOKEN --commit-message "Upload Windows artifact for ${{ steps.package-version.outputs.version }}"
