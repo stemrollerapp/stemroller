@@ -5,7 +5,7 @@ on:
 jobs:
   build-mac:
     name: Build StemRoller for macOS
-    runs-on: macos-latest
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v3
         with:
