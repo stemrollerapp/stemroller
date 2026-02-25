@@ -27,15 +27,15 @@ jobs:
       - name: Upload artifact to Hugging Face Hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_REPO_ID: ${{ vars.HF_REPO_ID }}
-          HF_REPO_TYPE: ${{ vars.HF_REPO_TYPE }}
+          HF_REPO_ID: ${{ vars.HF_REPO_ID || secrets.HF_REPO_ID }}
+          HF_REPO_TYPE: ${{ vars.HF_REPO_TYPE || secrets.HF_REPO_TYPE }}
         run: |
           if [ -z "$HF_TOKEN" ]; then
             echo "HF_TOKEN secret is not set" >&2
             exit 1
           fi
           if [ -z "$HF_REPO_ID" ]; then
-            echo "HF_REPO_ID variable is not set" >&2
+            echo "HF_REPO_ID is not set (add Actions variable HF_REPO_ID, or secret HF_REPO_ID)" >&2
             exit 1
           fi
           REPO_TYPE="${HF_REPO_TYPE:-model}"
