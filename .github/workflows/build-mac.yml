@@ -39,4 +39,4 @@ jobs:
             exit 1
           fi
           REPO_TYPE="${HF_REPO_TYPE:-model}"
-          huggingface-cli upload "$HF_REPO_ID" "stemroller-${{ steps.package-version.outputs.version }}-mac.zip" "stemroller-${{ steps.package-version.outputs.version }}-mac.zip" --repo-type "$REPO_TYPE" --token "$HF_TOKEN" --commit-message "Upload macOS artifact for ${{ steps.package-version.outputs.version }}"
+          hf upload "$HF_REPO_ID" "stemroller-${{ steps.package-version.outputs.version }}-mac.zip" "stemroller-${{ steps.package-version.outputs.version }}-mac.zip" --repo-type "$REPO_TYPE" --token "$HF_TOKEN" --commit-message "Upload macOS artifact for ${{ steps.package-version.outputs.version }}"

@@ -38,4 +38,4 @@ jobs:
           if (-not $env:HF_TOKEN) { throw "HF_TOKEN secret is not set" }
           if (-not $env:HF_REPO_ID) { throw "HF_REPO_ID is not set (add Actions variable HF_REPO_ID, or secret HF_REPO_ID)" }
           if (-not $env:HF_REPO_TYPE) { $env:HF_REPO_TYPE = "model" }
-          huggingface-cli upload $env:HF_REPO_ID "stemroller-${{ steps.package-version.outputs.version }}-win-cuda.exe" "stemroller-${{ steps.package-version.outputs.version }}-win-cuda.exe" --repo-type $env:HF_REPO_TYPE --token $env:HF_TOKEN --commit-message "Upload Windows artifact for ${{ steps.package-version.outputs.version }}"
+          hf upload $env:HF_REPO_ID "stemroller-${{ steps.package-version.outputs.version }}-win-cuda.exe" "stemroller-${{ steps.package-version.outputs.version }}-win-cuda.exe" --repo-type $env:HF_REPO_TYPE --token $env:HF_TOKEN --commit-message "Upload Windows artifact for ${{ steps.package-version.outputs.version }}"
