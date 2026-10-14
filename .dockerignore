@@ -1,0 +1,13 @@
+.git
+.github
+node_modules
+build
+dist
+.svelte-kit
+docker-data
+*-extra-files
+Dockerfile
+docker-compose*.yml
+.env
+.env.*
+.DS_Store
