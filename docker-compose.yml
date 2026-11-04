@@ -1,0 +1,39 @@
+# CPU:  docker compose up --build
+# GPU:  docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+# Then open http://localhost:6080
+
+services:
+  stemroller:
+    build:
+      context: .
+      args:
+        UID: ${STEMROLLER_UID:-1000}
+        GID: ${STEMROLLER_GID:-1000}
+    image: stemroller:cpu
+    init: true
+    restart: unless-stopped
+    ports:
+      # noVNC web UI; bound to localhost because the session has no password by default
+      - '127.0.0.1:${STEMROLLER_PORT:-6080}:6080'
+    environment:
+      RESOLUTION: ${STEMROLLER_RESOLUTION:-1280x800}
+      STEMROLLER_PORT: ${STEMROLLER_PORT:-6080}
+      VNC_PASSWORD: ${VNC_PASSWORD:-}
+    # Chromium and PyTorch workers both need more shared memory than Docker's 64MB default
+    shm_size: 2gb
+    # Lets Chromium create its renderer sandbox (the app force-enables it)
+    cap_add:
+      - SYS_ADMIN
+    volumes:
+      # Split stems end up here
+      - ${STEMROLLER_OUTPUT:-./docker-data/output}:/home/stemroller/Music/StemRoller
+      # Drop local songs here, then pick them from /data/input in the app's file dialog
+      - ${STEMROLLER_INPUT:-./docker-data/input}:/data/input
+      # App settings and list of finished songs
+      - stemroller-config:/home/stemroller/.config/stemroller
+      # Demucs models, downloaded on first use
+      - stemroller-models:/home/stemroller/.cache/torch
+
+volumes:
+  stemroller-config:
+  stemroller-models:

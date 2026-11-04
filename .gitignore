@@ -20,3 +20,7 @@ node_modules
 !*-extra-files/ThirdPartyApps/deno/.gitkeep
 *-extra-files/Models/**
 !*-extra-files/Models/.gitkeep
+
+/docker-data
+
+/docker-data
